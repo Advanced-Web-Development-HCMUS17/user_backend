@@ -3,6 +3,7 @@ const {USER_EVENT, LIST_ONLINE_USER_EVENT} = require("./eventConstant");
 
 const cors = require('cors');
 const http = require('http');
+const tokenServices = require('../services/token-service');
 const io = new Socket.Server(3030, {
   cors: {
     origin: "*"
@@ -16,19 +17,25 @@ let users = {};
 io.use((socket, next) => {
   console.log(socket.handshake.auth);
   const auth = socket.handshake.auth;
+  const {token} = auth;
+  socket.user = tokenServices.verify(token).sub;
   next();
 });
 
 
 io.on('connection', (socket) => {
 
-  users[socket.id] = socket.id;
-  io.emit(USER_EVENT.ONLINE, {user: socket.id, id: socket.id});
+  if (socket.user) {
+    users[socket.user._id] = socket.user;
+    io.emit(USER_EVENT.ONLINE, {user: socket.user, id: socket.user.id});
+  }
 
   socket.emit(LIST_ONLINE_USER_EVENT, users);
   socket.on('disconnect', () => {
-      users[socket.id] = undefined;
-      io.emit(USER_EVENT.OFFLINE, {user: socket.id, id: socket.id});
+      if (socket.user) {
+        users[socket.user._id] = undefined;
+        io.emit(USER_EVENT.OFFLINE, {user: socket.user, id: socket.user.id});
+      }
     }
   );
 });
