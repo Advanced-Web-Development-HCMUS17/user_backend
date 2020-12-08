@@ -8,9 +8,10 @@ exports.register = async (req, res) => {
         return;
     }
     const newUser = new userModel({username: userName, email: email, password: password});
-    const {_id} = await newUser.save();
+    let savedUser = await newUser.save();
+    savedUser.password = undefined;
     if (_id) {
-        res.status(201).send(tokenService.sign(_id));
+        res.status(201).send(tokenService.sign(savedUser));
     } else {
         res.status(500).send("Error when saving user.");
     }
@@ -18,12 +19,19 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
     if (req.isAuthenticated()) {
-        const {_id} = req.user;
-        const token = tokenService.sign(_id);
-        req.user.token = token;
-        await req.user.save();
-        res.status(200).send(token);
+        req.user.password = undefined;
+        res.status(200).send(tokenService.sign(req.user));
     } else {
+        res.status(500).send("Invalid user.");
+    }
+}
+
+exports.getUser = async (req, res) => {
+    const {token} = req.body;
+    const user = tokenService.verify(token);
+    if (token && user) {
+        res.status(200).send(user);
+    }else{
         res.status(500).send("Invalid user.");
     }
 }
