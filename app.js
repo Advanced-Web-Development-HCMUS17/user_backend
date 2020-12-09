@@ -9,7 +9,6 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const mongoose = require('./models/connect.js');
 const cors = require('cors');
-var indexRouter = require('./routes/index');
 var app = express();
 const PORT = process.env.PORT || 5000;
 const http = require('http');
@@ -25,7 +24,7 @@ const server = http.createServer(app);
 const usersRouter = require('./routes/user-route');
 
 const io = Socket(server, {
-  path:'/socket.io',
+  path: '/socket.io',
   cors:
     {origin: "*"}
 });
@@ -33,11 +32,11 @@ const io = Socket(server, {
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
-require('./socket/index')(app);
 app.use(cors());
-app.options("*",cors());
+app.options("*", cors());
 
 app.set('io', io);
+require('./socket/index')(app);
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
