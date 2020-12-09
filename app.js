@@ -21,21 +21,23 @@ const server = http.createServer(app);
 //     origin: "*"
 //   }
 // });
+
+const usersRouter = require('./routes/user-route');
+
 const io = Socket(server, {
   path:'/socket.io',
   cors:
     {origin: "*"}
 });
 
-const usersRouter = require('./routes/user-route');
-
-
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
-app.set('io', io);
 require('./socket/index')(app);
 app.use(cors());
+app.options("*",cors());
+
+app.set('io', io);
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
