@@ -10,9 +10,22 @@ const logger = require('morgan');
 const mongoose = require('./models/connect.js');
 const cors = require('cors');
 var indexRouter = require('./routes/index');
-require('./socket');
 var app = express();
 const PORT = process.env.PORT || 5000;
+const http = require('http');
+const Socket = require("socket.io");
+
+const server = http.createServer(app);
+// const io = new Socket.Server(server, {
+//   cors: {
+//     origin: "*"
+//   }
+// });
+const io = Socket(server, {
+  path:'/socket.io',
+  cors:
+    {origin: "*"}
+});
 
 const usersRouter = require('./routes/user-route');
 
@@ -20,22 +33,24 @@ const usersRouter = require('./routes/user-route');
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
+app.set('io', io);
+require('./socket/index')(app);
 app.use(cors());
 app.use(logger('dev'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res) {
+app.use(function (err, req, res) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
@@ -45,5 +60,6 @@ app.use(function(err, req, res) {
   res.render('error');
 });
 
-app.listen(PORT,() => console.log(`This server has started on port ${PORT}`));
-module.exports = app;
+
+// server.listen(PORT, () => console.log(`This server has started on port ${PORT}`));
+module.exports = server;
