@@ -7,7 +7,10 @@ exports.sign = (user) => {
 
 exports.verify = (token) => {
   try {
-    return JWT.verify(token.replace("Bearer ",""), process.env.JWT_SECRETKEY);
+    if (token) {
+      return JWT.verify(token.replace("Bearer ", ""), process.env.JWT_SECRETKEY);
+    }
+    return null;
   } catch (e) {
     return null;
   }
