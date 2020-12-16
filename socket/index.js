@@ -75,7 +75,9 @@ module.exports = (app) => {
         socket.emit(LOBBY_EVENT.LOBBY_INFO, lobby);
       }
     });
-
+    socket.on(LOBBY_EVENT.RECEIVE_MOVE,(move) => {
+        socket.emit(LOBBY_EVENT.SEND_MOVE,{move});
+    });
   });
 
 }
