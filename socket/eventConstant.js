@@ -12,5 +12,13 @@ const LOBBY_EVENT = {
   LEAVE_LOBBY: 'lobby/leave',
   LOBBY_INFO: 'lobby/info'
 }
+
 const LIST_ONLINE_USER_EVENT = 'onlineUserList';
-module.exports = {USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT};
+
+const CHAT_EVENT = {
+  RECEIVE_MESSAGE: 'chat/ClientToServerMessage',
+  SEND_MESSAGE: 'chat/ServerToClientMessage'
+}
+
+
+module.exports = {USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT};
