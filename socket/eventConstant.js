@@ -10,7 +10,9 @@ const LOBBY_EVENT = {
   NEW_LOBBY: 'lobby/new',
   DELETE_LOBBY: 'lobby/delete',
   LEAVE_LOBBY: 'lobby/leave',
-  LOBBY_INFO: 'lobby/info'
+  LOBBY_INFO: 'lobby/info',
+  SEND_MOVE: 'lobby/sendToClient',
+  RECEIVE_MOVE: 'lobby/sendToServer'
 }
 
 const LIST_ONLINE_USER_EVENT = 'onlineUserList';

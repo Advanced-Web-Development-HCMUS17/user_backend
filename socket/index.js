@@ -1,9 +1,9 @@
-const {Lobby, PLAYER_1} = require('../entity/Lobby');
+const { Lobby, PLAYER_1 } = require('../entity/Lobby');
 
-const {USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT} = require("./eventConstant");
+const { USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT } = require("./eventConstant");
 const tokenServices = require('../services/token-service');
 
-const {v4: uuidV4} = require('uuid');
+const { v4: uuidV4 } = require('uuid');
 
 module.exports = (app) => {
 
@@ -14,7 +14,7 @@ module.exports = (app) => {
   io.use((socket, next) => {
     console.log(socket.handshake.auth);
     const auth = socket.handshake.auth;
-    const {token} = auth;
+    const { token } = auth;
     socket.user = tokenServices.verify(token).sub;
     next();
   });
@@ -23,30 +23,30 @@ module.exports = (app) => {
 
     if (socket.user) {
       users[socket.user._id] = socket.user;
-      io.emit(USER_EVENT.ONLINE, {user: socket.user, id: socket.user.id});
+      io.emit(USER_EVENT.ONLINE, { user: socket.user, id: socket.user.id });
     }
     io.to(socket.id).emit(LIST_ONLINE_USER_EVENT, users);
     socket.on('disconnect', () => {
-        if (socket.user) {
-          users[socket.user._id] = undefined;
-          io.emit(USER_EVENT.OFFLINE, {user: socket.user, id: socket.user.id});
-        }
-        if (socket.gameRoom) {
-          const {lobbyId, player} = socket.gameRoom;
-          const lobby = lobbies[lobbyId];
-          const leftPlayer = lobby.leave(player);
-          io.to(lobbyId).emit(LOBBY_EVENT.LEAVE_LOBBY, {leftPlayer: leftPlayer});
-        }
+      if (socket.user) {
+        users[socket.user._id] = undefined;
+        io.emit(USER_EVENT.OFFLINE, { user: socket.user, id: socket.user.id });
       }
+      if (socket.gameRoom) {
+        const { lobbyId, player } = socket.gameRoom;
+        const lobby = lobbies[lobbyId];
+        const leftPlayer = lobby.leave(player);
+        io.to(lobbyId).emit(LOBBY_EVENT.LEAVE_LOBBY, { leftPlayer: leftPlayer });
+      }
+    }
     );
 
     socket.on(LOBBY_EVENT.LEAVE_LOBBY, () => {
       if (socket.gameRoom) {
-        const {lobbyId, player} = socket.gameRoom;
+        const { lobbyId, player } = socket.gameRoom;
         const lobby = lobbies[lobbyId];
         const leftPlayer = lobby.leave(player);
         socket.leave(lobbyId);
-        io.to(lobbyId).emit(LOBBY_EVENT.LEAVE_LOBBY, {leftPlayer: leftPlayer});
+        io.to(lobbyId).emit(LOBBY_EVENT.LEAVE_LOBBY, { leftPlayer: leftPlayer });
       }
     });
 
@@ -56,11 +56,11 @@ module.exports = (app) => {
       const roomId = newLobby.getRoomName();
       lobbies[roomId] = newLobby;
       socket.join(roomId);
-      socket.gameRoom = {lobbyId: lobbyId, player: PLAYER_1};
-      socket.emit(LOBBY_EVENT.CREATE_LOBBY, {roomId: roomId, player: PLAYER_1});
+      socket.gameRoom = { lobbyId: lobbyId, player: PLAYER_1 };
+      socket.emit(LOBBY_EVENT.CREATE_LOBBY, { roomId: roomId, player: PLAYER_1 });
     });
 
-    socket.on(LOBBY_EVENT.JOIN_LOBBY, ({roomId}) => {
+    socket.on(LOBBY_EVENT.JOIN_LOBBY, ({ roomId }) => {
       const lobby = lobbies[roomId];
       socket.emit(LOBBY_EVENT.LOBBY_INFO, lobby);
       if (!socket.user) return;
@@ -70,9 +70,8 @@ module.exports = (app) => {
         socket.emit(LOBBY_EVENT.LOBBY_INFO, lobby);
       } else {
         socket.join(lobby.getRoomName());
-        console.log("join room name", lobby.getRoomName());
-        socket.gameRoom = {lobbyId: lobby.getRoomName(), player: PLAYER_1};
-        io.to(lobby.getRoomName()).emit(LOBBY_EVENT.JOIN_LOBBY, {user: socket.user, player: join});
+        socket.gameRoom = { lobbyId: lobby.getRoomName(), player: PLAYER_1 };
+        io.to(lobby.getRoomName()).emit(LOBBY_EVENT.JOIN_LOBBY, { user: socket.user, player: join });
         socket.emit(LOBBY_EVENT.LOBBY_INFO, lobby);
       }
     });
@@ -81,5 +80,9 @@ module.exports = (app) => {
       console.log(socket.user);
       io.to(roomId).emit(CHAT_EVENT.SEND_MESSAGE, {username: socket.user.username, message: message});
     });
+    socket.on(LOBBY_EVENT.RECEIVE_MOVE,(move) => {
+        socket.emit(LOBBY_EVENT.SEND_MOVE,{move});
+    });
   });
+
 }
