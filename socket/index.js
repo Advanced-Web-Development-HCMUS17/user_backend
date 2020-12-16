@@ -1,6 +1,6 @@
 const { Lobby, PLAYER_1 } = require('../entity/Lobby');
 
-const { USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT } = require("./eventConstant");
+const { USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT } = require("./eventConstant");
 const tokenServices = require('../services/token-service');
 
 const { v4: uuidV4 } = require('uuid');
