@@ -1,6 +1,6 @@
 const { Lobby, PLAYER_1 } = require('../entity/Lobby');
 
-const { USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT } = require("./eventConstant");
+const { USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT } = require("./eventConstant");
 const tokenServices = require('../services/token-service');
 
 const { v4: uuidV4 } = require('uuid');
@@ -74,6 +74,11 @@ module.exports = (app) => {
         io.to(lobby.getRoomName()).emit(LOBBY_EVENT.JOIN_LOBBY, { user: socket.user, player: join });
         socket.emit(LOBBY_EVENT.LOBBY_INFO, lobby);
       }
+    });
+
+    socket.on(CHAT_EVENT.RECEIVE_MESSAGE, ({message, roomId}) => {
+      console.log(socket.user);
+      io.to(roomId).emit(CHAT_EVENT.SEND_MESSAGE, {username: socket.user.username, message: message});
     });
     socket.on(LOBBY_EVENT.RECEIVE_MOVE,(move) => {
         socket.emit(LOBBY_EVENT.SEND_MOVE,{move});
