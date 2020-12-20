@@ -76,12 +76,12 @@ module.exports = (app) => {
       }
     });
 
-    socket.on(CHAT_EVENT.RECEIVE_MESSAGE, ({message, roomId}) => {
+    socket.on(CHAT_EVENT.RECEIVE_MESSAGE, ({ message, roomId }) => {
       console.log(socket.user);
-      io.to(roomId).emit(CHAT_EVENT.SEND_MESSAGE, {username: socket.user.username, message: message});
+      io.to(roomId).emit(CHAT_EVENT.SEND_MESSAGE, { username: socket.user.username, message: message });
     });
-    socket.on(LOBBY_EVENT.RECEIVE_MOVE,(move) => {
-        socket.emit(LOBBY_EVENT.SEND_MOVE,{move});
+    socket.on(LOBBY_EVENT.RECEIVE_MOVE, ({ move, roomId }) => {
+      io.to(roomId).emit(LOBBY_EVENT.SEND_MOVE, { move });
     });
   });
 
