@@ -6,7 +6,7 @@ function ulti(history, rowNow, colNow, xValue, yValue, sign, row) {
   let number;
   let array = [];
   for (i = rowNow - 4 * xValue, j = colNow - 4 * yValue, number = 0;
-       i <= rowNow + 4 * xValue && j <= colNow + 4 * yValue; i += xValue, j += yValue) {
+    i <= rowNow + 4 * xValue && j <= colNow + 4 * yValue; i += xValue, j += yValue) {
     console.log(`i=`, i, `j=`, j, `arr=`, array);
     if (i < 0 || j < 0 || i >= row || j >= row) {
       continue;
@@ -57,7 +57,7 @@ function calculateWinner1(history, move, isX, row) {
 
 function calculateWinner(squares, size) {
   //Kiểm tra hàng ngang
-  console.log('Mảng là: '+squares);
+  console.log('Mảng là: ' + squares);
   for (let i = 0; i < size; i++) {
     const winRow = [];
     for (let j = 0; j < size; j++) {
@@ -128,9 +128,9 @@ function refactorArray(history, row) {
 }
 
 function getRandom(min, max) {
-  return Math.floor(Math.random() * (max - min + 1) ) + min;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-const gameServices = {calculateWinner, refactorArray,getRandom};
+const gameServices = { calculateWinner,calculateWinner1, refactorArray, getRandom };
 
-export default gameServices;
+module.exports = gameServices;

@@ -80,8 +80,8 @@ module.exports = (app) => {
       console.log(socket.user);
       io.to(roomId).emit(CHAT_EVENT.SEND_MESSAGE, { username: socket.user.username, message: message });
     });
-    socket.on(LOBBY_EVENT.RECEIVE_MOVE, ({ move, roomId }) => {
-      io.to(roomId).emit(LOBBY_EVENT.SEND_MOVE, { move });
+    socket.on(LOBBY_EVENT.RECEIVE_MOVE, ({ newHistory, move, roomId, winChain }) => {
+      io.to(roomId).emit(LOBBY_EVENT.SEND_MOVE, { newHistory, winChain });
     });
   });
 
