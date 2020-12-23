@@ -9,6 +9,7 @@ module.exports = (app) => {
 
   let users = {};
   let lobbies = {};
+  let chats = {};
   const io = app.get('io');
 
   io.use((socket, next) => {
@@ -55,6 +56,7 @@ module.exports = (app) => {
       const newLobby = new Lobby(lobbyId, this.user);
       const roomId = newLobby.getRoomName();
       lobbies[roomId] = newLobby;
+      chats[roomId] = [];
       socket.join(roomId);
       socket.gameRoom = { lobbyId: lobbyId, player: PLAYER_1 };
       socket.emit(LOBBY_EVENT.CREATE_LOBBY, { roomId: roomId, player: PLAYER_1 });
@@ -76,13 +78,23 @@ module.exports = (app) => {
       }
     });
 
-    socket.on(CHAT_EVENT.RECEIVE_MESSAGE, ({message, roomId}) => {
-      console.log(socket.user);
-      io.to(roomId).emit(CHAT_EVENT.SEND_MESSAGE, {username: socket.user.username, message: message});
+    /*
+    CHAT SOCKET
+     */
+    socket.on(CHAT_EVENT.RECEIVE_MESSAGE, ({message, time}) => {
+      if (socket.user && socket.gameRoom) {
+        const {lobbyId} = socket.gameRoom;
+        const chat_message = {user: socket.user, message: message, time: time};
+        chats[lobbyId] = [...chats[lobbyId], chat_message];
+        io.to(lobbyId).emit(CHAT_EVENT.SEND_MESSAGE, {messageList: chats[lobbyId]});
+      }
     });
+
+    /*
+    GAME SOCKET
+     */
     socket.on(LOBBY_EVENT.RECEIVE_MOVE,(move) => {
         socket.emit(LOBBY_EVENT.SEND_MOVE,{move});
     });
   });
-
 }
