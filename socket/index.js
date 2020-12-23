@@ -1,14 +1,19 @@
 const { Lobby, PLAYER_1 } = require('../entity/Lobby');
 
-const { USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT } = require("./eventConstant");
+const { USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT, GAME_EVENT } = require("./eventConstant");
 const tokenServices = require('../services/token-service');
 
 const { v4: uuidV4 } = require('uuid');
+const gameServices = require('../services/game-service');
+const { checkHistory } = require('../services/game-service');
 
 module.exports = (app) => {
 
   let users = {};
   let lobbies = {};
+  let ready = new Map();
+  let userTurn = new Map();
+  let histories = new Map();
   const io = app.get('io');
 
   io.use((socket, next) => {
@@ -80,9 +85,79 @@ module.exports = (app) => {
       console.log(socket.user);
       io.to(roomId).emit(CHAT_EVENT.SEND_MESSAGE, { username: socket.user.username, message: message });
     });
-    socket.on(LOBBY_EVENT.RECEIVE_MOVE, ({ newHistory, move, roomId, winChain }) => {
-      io.to(roomId).emit(LOBBY_EVENT.SEND_MOVE, { newHistory, winChain });
+
+    socket.on(GAME_EVENT.GAME_READY, () => {
+
+      if (socket.gameRoom && socket.user) {
+        //console.log("Yes");
+        const lobbyId = socket.gameRoom.lobbyId;
+        const thisUser = socket.user.username;
+        console.log(lobbyId,thisUser);
+        let thisLobby = lobbies[lobbyId];
+        const { player1, player2 } = thisLobby.getPlayers();
+        if (player1 && player2) {
+          if (player1.username === thisUser || player2.username === thisUser) {
+            
+            let readyList = ready.get(lobbyId);
+            if (!readyList) {
+              readyList = [];
+              readyList.push(thisUser);
+              ready.set(lobbyId, readyList);
+            }
+            else if (readyList.length === 1 && !find(readyList, thisUser)) {
+              readyList.push(thisUser);
+              ready.set(lobbyId, readyList);
+              const randNum = gameServices.getRandom(1, 2);
+
+              histories.set(lobbyId, []);
+              
+
+              let userFirst, userSecond;
+              if (randNum === 1) {
+                userFirst = readyList[0];
+                userSecond = readyList[1];
+              }
+              else {
+                userFirst = readyList[1];
+                userSecond = readyList[0];
+              }
+              userTurn.set(lobbyId,userFirst);
+
+              io.to(lobbyId).emit(GAME_EVENT.GAME_START, ({
+                userFirst: userFirst,
+                userSecond: userSecond
+              }));
+              console.log("Worked");
+            }
+          }
+        }
+      }
     });
+
+
+
+    socket.on(GAME_EVENT.SEND_MOVE, ({ move }) => {
+      const lobbyId = socket.gameRoom.lobbyId;
+      const thisUser = socket.user.username;
+      let history = histories.get(lobbyId);
+      if (checkHistory(history, move) && userTurn.get(lobbyId) === thisUser) {
+        // set userTurn
+
+        history.push(move);
+        histories.set(lobbyId,history);
+        io.to(lobbyId).emit(GAME_EVENT.SEND_MOVE,({newHistory:history}));
+      }
+    })
+
   });
 
+}
+
+const find = (array, value) => {
+  for (let i = 0; i < array.length; i++) {
+    if (array[i] === value) {
+      return true;
+    }
+  }
+  return false;
 }

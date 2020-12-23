@@ -39,6 +39,9 @@ class Lobby {
   getRoomName() {
     return ROOM_PREFIX + this.id;
   }
+  getPlayers() {
+    return { player1: this.player1, player2: this.player2 };
+  }
 }
 
-module.exports = {PLAYER_1, Lobby, PLAYER_2}
+module.exports = { PLAYER_1, Lobby, PLAYER_2 }

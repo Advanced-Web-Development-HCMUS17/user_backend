@@ -1,3 +1,6 @@
+
+const gameModel = require('../models/gameModel');
+
 const COUNT2WIN = 5;
 
 function ulti(history, rowNow, colNow, xValue, yValue, sign, row) {
@@ -55,7 +58,9 @@ function calculateWinner1(history, move, isX, row) {
   return null;
 }
 
-function calculateWinner(squares, size) {
+function calculateWinner(history, size) {
+
+  let squares = refactorArray(history, size);
   //Kiểm tra hàng ngang
   console.log('Mảng là: ' + squares);
   for (let i = 0; i < size; i++) {
@@ -131,6 +136,30 @@ function getRandom(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-const gameServices = { calculateWinner,calculateWinner1, refactorArray, getRandom };
+
+function checkHistory(history, move) {
+  for (let i = 0; i < history.length; i++) {
+    if (history[i] === move) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+async function createGame(roomId, userFirst, userSecond) {
+  const date = new Date();
+  const newGame = new gameModel({
+    roomId: roomId,
+    user1: userFirst,
+    user2: userSecond,
+    history: null,
+    date: date,
+    winner: null
+  });
+  let savedGame = await newGame.save();
+}
+
+const gameServices = { calculateWinner, calculateWinner1, refactorArray, getRandom, checkHistory, createGame };
 
 module.exports = gameServices;

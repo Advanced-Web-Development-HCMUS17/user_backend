@@ -22,7 +22,6 @@ const server = http.createServer(app);
 // });
 
 const usersRouter = require('./routes/user-route');
-const gameRouter = require('./routes/game-route');
 
 const io = Socket(server, {
   path: '/socket.io',
@@ -46,7 +45,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/users', usersRouter);
 
-app.use('/game',gameRouter);
 
 // catch 404 and forward to error handler
 // app.use(function (req, res, next) {

@@ -19,10 +19,6 @@ const gameSchema = new mongoose.Schema({
     date:{
         type:Date,
     },
-    userTurn:{
-        type: String,
-        required: true,
-    },
     winner:{
         type:String,
     }
