@@ -158,8 +158,19 @@ async function createGame(roomId, userFirst, userSecond) {
     winner: null
   });
   let savedGame = await newGame.save();
+  return savedGame;
 }
 
-const gameServices = { calculateWinner, calculateWinner1, refactorArray, getRandom, checkHistory, createGame };
+async function saveGame(roomId,history,winner)
+{
+  const update = {
+    history:history,
+    winner:winner
+  }
+
+  const thisGame = await gameModel.findOneAndUpdate({roomId:roommId},update);
+  return thisGame;
+}
+const gameServices = { calculateWinner, calculateWinner1, refactorArray, getRandom, checkHistory, createGame ,saveGame};
 
 module.exports = gameServices;
