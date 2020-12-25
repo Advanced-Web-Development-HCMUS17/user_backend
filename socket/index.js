@@ -155,13 +155,16 @@ module.exports = (app) => {
         history.push(move);
         histories.set(lobbyId, history);
 
-        const { winner, winChain } = gameServices.calculateWinner(history, row);
-        if (winner && winChain) {
+        const winSquares = gameServices.calculateWinner(history,move, row);
+        if (winSquares) {
+          console.log("Game end!");
           gameServices.saveGame(lobbyId, history, thisUser);
-          io.to(lobbyId).emit(GAME_EVENT.GAME_END, { userWin: thisUser, winChain: winChain });
+          userTurn.set(lobbyId,undefined);
+          io.to(lobbyId).emit(GAME_EVENT.GAME_END, {newHistory:history, userWin: thisUser, winChain: winSquares,boardSize:row });
         }
         else {
-          io.to(lobbyId).emit(GAME_EVENT.SEND_MOVE, { newHistory: history, userTurn: thisTurn });
+          console.log("Send move to client!");
+          io.to(lobbyId).emit(GAME_EVENT.SEND_MOVE, { newHistory: history, userTurn: thisTurn,boardSize:row });
         }
       }
     })

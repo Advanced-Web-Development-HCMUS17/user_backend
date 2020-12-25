@@ -4,13 +4,14 @@ const gameModel = require('../models/gameModel');
 const COUNT2WIN = 5;
 
 function ulti(history, rowNow, colNow, xValue, yValue, sign, row) {
-  console.log(history)
+  //console.log(history)
   let i, j;
   let number;
   let array = [];
-  for (i = rowNow - 4 * xValue, j = colNow - 4 * yValue, number = 0;
-    i <= rowNow + 4 * xValue && j <= colNow + 4 * yValue; i += xValue, j += yValue) {
-    console.log(`i=`, i, `j=`, j, `arr=`, array);
+  const rowInit = rowNow - 4 * xValue;
+  const colInit = colNow - 4 * yValue;
+  for (i = rowInit, j = colInit, number = 0;
+    Math.abs(i - rowInit) <= 8 && Math.abs(j - colInit) <= 8; i += xValue, j += yValue) {
     if (i < 0 || j < 0 || i >= row || j >= row) {
       continue;
     }
@@ -32,10 +33,11 @@ function ulti(history, rowNow, colNow, xValue, yValue, sign, row) {
   }
 }
 
-function calculateWinner1(history, move, isX, row) {
-  const sign = isX ? 'X' : 'O';
+function calculateWinner(newHistory, move, row) {
+  const history = refactorArray(newHistory, row);
+  const sign = history[move];
   const rowNow = Math.floor(move / row);
-  const colNow = move % row;
+  const colNow = move - row * rowNow;
   const diagonal1 = ulti(history, rowNow, colNow, 1, 1, sign, row);
   if (diagonal1) {
     return diagonal1;
@@ -57,73 +59,6 @@ function calculateWinner1(history, move, isX, row) {
   }
   return null;
 }
-
-function calculateWinner(history, size) {
-
-  let squares = refactorArray(history, size);
-  //Kiểm tra hàng ngang
-  console.log('Mảng là: ' + squares);
-  for (let i = 0; i < size; i++) {
-    const winRow = [];
-    for (let j = 0; j < size; j++) {
-      const index = i * size + j;
-      if (squares[index] && squares[index] === squares[i * size]) {
-        winRow.push(index);
-      } else {
-        break;
-      }
-    }
-    if (winRow.length === COUNT2WIN) {
-      return { winner: squares[i * size], winSquares: winRow };
-    }
-  }
-
-  //Kiểm tra hàng dọc
-  for (let i = 0; i < size; i++) {
-    const winCol = [];
-    for (let j = 0; j < size; j++) {
-      const index = j * size + i;
-      if (squares[index] && squares[index] === squares[i]) {
-        winCol.push(index);
-      } else {
-        break;
-      }
-    }
-    if (winCol.length === COUNT2WIN) {
-      return { winner: squares[i], winSquares: winCol };
-    }
-  }
-
-  //Kiểm tra chéo chính
-  const winDiag = [];
-  for (let i = 0; i < size; i++) {
-    const index = i * size + i;
-    if (squares[index] && squares[index] === squares[0]) {
-      winDiag.push(index);
-    } else {
-      break;
-    }
-  }
-  if (winDiag.length === COUNT2WIN) {
-    return { winner: squares[0], winSquares: winDiag };
-  }
-
-  //Kiểm tra chéo phụ
-  const winDiag2 = [];
-  for (let i = 1; i <= size; i++) {
-    const index = i * (size - 1);
-    if (squares[index] && squares[index] === squares[size - 1]) {
-      winDiag2.push(index);
-    } else {
-      break;
-    }
-  }
-  if (winDiag2.length === COUNT2WIN) {
-    return { winner: squares[size - 1], winSquares: winDiag2 };
-  }
-  return null;
-}
-
 function refactorArray(history, row) {
   let array = Array(row * row).fill(null);
   for (let i = 0; i < history.length; i++) {
@@ -161,16 +96,15 @@ async function createGame(roomId, userFirst, userSecond) {
   return savedGame;
 }
 
-async function saveGame(roomId,history,winner)
-{
+async function saveGame(roomId, history, winner) {
   const update = {
-    history:history,
-    winner:winner
+    history: history,
+    winner: winner
   }
 
-  const thisGame = await gameModel.findOneAndUpdate({roomId:roommId},update);
+  const thisGame = await gameModel.findOneAndUpdate({ roomId: roomId }, update);
   return thisGame;
 }
-const gameServices = { calculateWinner, calculateWinner1, refactorArray, getRandom, checkHistory, createGame ,saveGame};
+const gameServices = { calculateWinner, refactorArray, getRandom, checkHistory, createGame, saveGame };
 
 module.exports = gameServices;
