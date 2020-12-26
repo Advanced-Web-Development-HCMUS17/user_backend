@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const gameSchema = new mongoose.Schema({
+    roomId: {
+        type:String,
+        required: true,
+    },
     user1: {
         type: String,
         required: true,
