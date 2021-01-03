@@ -31,7 +31,7 @@ exports.login = async (req, res) => {
   }
 }
 
-exports.loginWithGoogle = async (req, res) => {
+exports.loginUsingOAuth2 = async (req, res) => {
   if (req.user) {
     req.user.password = undefined;
     res.redirect(`${process.env.CLIENT_URL}/login?token=${tokenService.sign(req.user)}`);
