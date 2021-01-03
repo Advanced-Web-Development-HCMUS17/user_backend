@@ -4,8 +4,17 @@ const passportjwt = require("passport-jwt");
 const bcrypt = require("bcryptjs");
 const LocalStrategy = require("passport-local").Strategy;
 const JWTStrategy = require("passport-jwt").Strategy;
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 const userModel = require('../models/userModel');
+
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
 
 passport.use('jwt', new JWTStrategy(
   {
@@ -39,5 +48,31 @@ passport.use('local', new LocalStrategy({
     return done(error);
   }
 }));
+
+passport.use('google', new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL
+  },
+  async function (accessToken, refreshToken, profile, done) {
+    const userData = profile._json;
+    console.log(userData);
+    let user = await userModel.findOne({"email": userData.email});
+    if (user)
+      return done(null, user);
+    else {
+      const newUser = new userModel({
+        "username": userData.name,
+        "email": userData.email,
+        "password": `${userData.sub}+!$%${userData.email}`
+      });
+      user = await newUser.save();
+      if (user.id) {
+        return done(null, user);
+      }
+      return done(null, false);
+    }
+  }
+));
 
 module.exports = passport;

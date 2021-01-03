@@ -13,6 +13,7 @@ var app = express();
 const PORT = process.env.PORT || 5000;
 const http = require('http');
 const Socket = require("socket.io");
+const passport = require('passport');
 
 const server = http.createServer(app);
 // const io = new Socket.Server(server, {
@@ -33,6 +34,7 @@ const io = Socket(server, {
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 app.use(cors());
+app.use(passport.initialize());
 app.options("*", cors());
 
 app.set('io', io);
