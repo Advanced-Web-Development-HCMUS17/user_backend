@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+const ROLE = {
+  USER: "USER",
+  ADMIN: "ADMIN",
+  BANNED: "BANNED"
+}
+
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -22,6 +28,11 @@ const userSchema = new mongoose.Schema({
     required: true,
     default: 0
   },
+  role:
+    {
+      type: String,
+      default: "USER"
+    }
 });
 
 userSchema.pre('save', async function (next) {
@@ -40,4 +51,6 @@ userSchema.pre('update', async function (next) {
   next();
 })
 
-module.exports = User = mongoose.model("user", userSchema);
+User = mongoose.model("user", userSchema);
+module.exports = {User, ROLE}
+

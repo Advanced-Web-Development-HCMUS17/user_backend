@@ -1,12 +1,16 @@
-const { Lobby, PLAYER_1 } = require('../entity/Lobby');
+const {Lobby, PLAYER_1} = require('../entity/Lobby');
 
-const { USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT, GAME_EVENT } = require("./eventConstant");
+const {USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT, GAME_EVENT} = require("./eventConstant");
 const tokenServices = require('../services/token-service');
 
-const { v4: uuidV4 } = require('uuid');
+const {v4: uuidV4} = require('uuid');
 const gameServices = require('../services/game-service');
-const { checkHistory } = require('../services/game-service');
-const { row } = require('../constants/constants.js');
+const {checkHistory} = require('../services/game-service');
+const {row} = require('../constants/constants.js');
+
+const User = require('../models/userModel');
+
+const USER_ROOM_PREFIX = 'user';
 
 module.exports = (app) => {
 
@@ -21,7 +25,7 @@ module.exports = (app) => {
   io.use((socket, next) => {
     console.log(socket.handshake.auth);
     const auth = socket.handshake.auth;
-    const { token } = auth;
+    const {token} = auth;
     socket.user = tokenServices.verify(token).sub;
     next();
   });
@@ -30,30 +34,47 @@ module.exports = (app) => {
 
     if (socket.user) {
       users[socket.user._id] = socket.user;
-      io.emit(USER_EVENT.ONLINE, { user: socket.user, id: socket.user.id });
+      socket.join(USER_ROOM_PREFIX + socket.user._id);
+      io.emit(USER_EVENT.ONLINE, {user: socket.user, id: socket.user.id});
+
     }
     io.to(socket.id).emit(LIST_ONLINE_USER_EVENT, users);
+
+    socket.on(LOBBY_EVENT.INVITE, async ({email}) => {
+      const user = await User.findOne({email: email}).lean();
+      console.log(LOBBY_EVENT.INVITE, socket.user, "TO", user);
+      if (user) {
+        const userId = user._id;
+        if (socket.user && socket.gameRoom) {
+          socket.to(USER_ROOM_PREFIX + userId).emit(LOBBY_EVENT.INVITE, ({
+            inviteUser: socket.user,
+            lobbyId: socket.gameRoom.lobbyId
+          }));
+        }
+      }
+    })
+
     socket.on('disconnect', () => {
-      if (socket.user) {
-        users[socket.user._id] = undefined;
-        io.emit(USER_EVENT.OFFLINE, { user: socket.user, id: socket.user.id });
+        if (socket.user) {
+          users[socket.user._id] = undefined;
+          io.emit(USER_EVENT.OFFLINE, {user: socket.user, id: socket.user.id});
+        }
+        if (socket.gameRoom) {
+          const {lobbyId, player} = socket.gameRoom;
+          const lobby = lobbies[lobbyId];
+          const leftPlayer = lobby.leave(player);
+          io.to(lobbyId).emit(LOBBY_EVENT.LEAVE_LOBBY, {leftPlayer: leftPlayer});
+        }
       }
-      if (socket.gameRoom) {
-        const { lobbyId, player } = socket.gameRoom;
-        const lobby = lobbies[lobbyId];
-        const leftPlayer = lobby.leave(player);
-        io.to(lobbyId).emit(LOBBY_EVENT.LEAVE_LOBBY, { leftPlayer: leftPlayer });
-      }
-    }
     );
 
     socket.on(LOBBY_EVENT.LEAVE_LOBBY, () => {
       if (socket.gameRoom) {
-        const { lobbyId, player } = socket.gameRoom;
+        const {lobbyId, player} = socket.gameRoom;
         const lobby = lobbies[lobbyId];
         const leftPlayer = lobby.leave(player);
         socket.leave(lobbyId);
-        io.to(lobbyId).emit(LOBBY_EVENT.LEAVE_LOBBY, { leftPlayer: leftPlayer });
+        io.to(lobbyId).emit(LOBBY_EVENT.LEAVE_LOBBY, {leftPlayer: leftPlayer});
       }
     });
 
@@ -64,11 +85,11 @@ module.exports = (app) => {
       lobbies[roomId] = newLobby;
       chats[roomId] = [];
       socket.join(roomId);
-      socket.gameRoom = { lobbyId: lobbyId, player: PLAYER_1 };
-      socket.emit(LOBBY_EVENT.CREATE_LOBBY, { roomId: roomId, player: PLAYER_1 });
+      socket.gameRoom = {lobbyId: lobbyId, player: PLAYER_1};
+      socket.emit(LOBBY_EVENT.CREATE_LOBBY, {roomId: roomId, player: PLAYER_1});
     });
 
-    socket.on(LOBBY_EVENT.JOIN_LOBBY, ({ roomId }) => {
+    socket.on(LOBBY_EVENT.JOIN_LOBBY, ({roomId}) => {
       const lobby = lobbies[roomId];
       socket.emit(LOBBY_EVENT.LOBBY_INFO, lobby);
       if (!socket.user) return;
@@ -78,9 +99,9 @@ module.exports = (app) => {
         socket.emit(LOBBY_EVENT.LOBBY_INFO, lobby);
       } else {
         socket.join(lobby.getRoomName());
-        socket.gameRoom = { lobbyId: lobby.getRoomName(), player: PLAYER_1 };
-        io.to(lobby.getRoomName()).emit(LOBBY_EVENT.JOIN_LOBBY, { user: socket.user, player: join });
-        socket.emit(LOBBY_EVENT.LOBBY_INFO, lobby);
+        socket.gameRoom = {lobbyId: lobby.getRoomName(), player: PLAYER_1};
+        io.to(lobby.getRoomName()).emit(LOBBY_EVENT.JOIN_LOBBY, {user: socket.user, player: join});
+        io.to(lobby.getRoomName()).emit(LOBBY_EVENT.LOBBY_INFO, lobby);
       }
     });
 
@@ -99,9 +120,6 @@ module.exports = (app) => {
     /*
     GAME SOCKET
      */
-    socket.on(LOBBY_EVENT.RECEIVE_MOVE,(move) => {
-        socket.emit(LOBBY_EVENT.SEND_MOVE,{move});
-    });
 
     socket.on(GAME_EVENT.GAME_READY, () => {
 
@@ -111,7 +129,7 @@ module.exports = (app) => {
         const thisUser = socket.user.username;
         console.log(lobbyId, thisUser);
         let thisLobby = lobbies[lobbyId];
-        const { player1, player2 } = thisLobby.getPlayers();
+        const {player1, player2} = thisLobby.getPlayers();
         if (player1 && player2) {
           if (player1.username === thisUser || player2.username === thisUser) {
 
@@ -120,8 +138,7 @@ module.exports = (app) => {
               readyList = [];
               readyList.push(thisUser);
               ready.set(lobbyId, readyList);
-            }
-            else if (readyList.length === 1 && !find(readyList, thisUser)) {
+            } else if (readyList.length === 1 && !find(readyList, thisUser)) {
               readyList.push(thisUser);
               ready.set(lobbyId, readyList);
               const randNum = gameServices.getRandom(1, 2);
@@ -133,14 +150,13 @@ module.exports = (app) => {
               if (randNum === 1) {
                 userFirst = readyList[0];
                 userSecond = readyList[1];
-              }
-              else {
+              } else {
                 userFirst = readyList[1];
                 userSecond = readyList[0];
               }
               userTurn.set(lobbyId, userFirst);
 
-              gameServices.createGame(lobbyId,userFirst,userSecond);
+              gameServices.createGame(lobbyId, userFirst, userSecond);
 
               io.to(lobbyId).emit(GAME_EVENT.GAME_START, {
                 userFirst: userFirst,
@@ -155,8 +171,7 @@ module.exports = (app) => {
     });
 
 
-
-    socket.on(GAME_EVENT.SEND_MOVE, ({ move }) => {
+    socket.on(GAME_EVENT.SEND_MOVE, ({move}) => {
       const lobbyId = socket.gameRoom.lobbyId;
       const thisUser = socket.user.username;
       let thisTurn = userTurn.get(lobbyId);
@@ -164,23 +179,27 @@ module.exports = (app) => {
       if (checkHistory(history, move) && thisTurn === thisUser) {
         // set userTurn
 
-        const { player1, player2 } = lobbies[lobbyId].getPlayers();
+        const {player1, player2} = lobbies[lobbyId].getPlayers();
         thisTurn = (player1.username === thisTurn) ? player2.username : player1.username;
         userTurn.set(lobbyId, thisTurn);
 
         history.push(move);
         histories.set(lobbyId, history);
 
-        const winSquares = gameServices.calculateWinner(history,move, row);
+        const winSquares = gameServices.calculateWinner(history, move, row);
         if (winSquares) {
           console.log("Game end!");
           gameServices.saveGame(lobbyId, history, thisUser);
-          userTurn.set(lobbyId,undefined);
-          io.to(lobbyId).emit(GAME_EVENT.GAME_END, {newHistory:history, userWin: thisUser, winChain: winSquares,boardSize:row });
-        }
-        else {
+          userTurn.set(lobbyId, undefined);
+          io.to(lobbyId).emit(GAME_EVENT.GAME_END, {
+            newHistory: history,
+            userWin: thisUser,
+            winChain: winSquares,
+            boardSize: row
+          });
+        } else {
           console.log("Send move to client!");
-          io.to(lobbyId).emit(GAME_EVENT.SEND_MOVE, { newHistory: history, userTurn: thisTurn,boardSize:row });
+          io.to(lobbyId).emit(GAME_EVENT.SEND_MOVE, {newHistory: history, userTurn: thisTurn, boardSize: row});
         }
       }
     })

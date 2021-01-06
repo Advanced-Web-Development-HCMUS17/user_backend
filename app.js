@@ -13,6 +13,8 @@ var app = express();
 const PORT = process.env.PORT || 5000;
 const http = require('http');
 const Socket = require("socket.io");
+const passport = require('./middleware/passport');
+
 
 const server = http.createServer(app);
 // const io = new Socket.Server(server, {
@@ -22,6 +24,7 @@ const server = http.createServer(app);
 // });
 
 const usersRouter = require('./routes/user-route');
+const adminRouter = require('./routes/adminRoute');
 
 const io = Socket(server, {
   path: '/socket.io',
@@ -44,6 +47,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/users', usersRouter);
+app.use('/admin', passport.authenticate('adminJwt', {session: false}), adminRouter);
 
 
 // catch 404 and forward to error handler

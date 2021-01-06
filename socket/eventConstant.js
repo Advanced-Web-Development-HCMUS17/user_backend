@@ -11,13 +11,14 @@ const LOBBY_EVENT = {
   DELETE_LOBBY: 'lobby/delete',
   LEAVE_LOBBY: 'lobby/leave',
   LOBBY_INFO: 'lobby/info',
+  INVITE: 'lobby/invite'
 };
 
 const GAME_EVENT = {
-  GAME_READY : 'game/ready',
-  GAME_START : 'game/start',
-  SEND_MOVE : 'game/send',
-  GAME_END : 'game/end'
+  GAME_READY: 'game/ready',
+  GAME_START: 'game/start',
+  SEND_MOVE: 'game/send',
+  GAME_END: 'game/end'
 };
 
 const LIST_ONLINE_USER_EVENT = 'onlineUserList';
@@ -28,4 +29,4 @@ const CHAT_EVENT = {
 }
 
 
-module.exports = { USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT, GAME_EVENT };
+module.exports = {USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT, GAME_EVENT};
