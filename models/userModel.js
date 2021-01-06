@@ -7,7 +7,7 @@ const ROLE = {
   BANNED: "BANNED"
 }
 
-const userSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
@@ -28,14 +28,19 @@ const userSchema = new mongoose.Schema({
     required: true,
     default: 0
   },
-  role:
-    {
-      type: String,
-      default: "USER"
-    }
+  role: {
+    type: String,
+    required: true,
+    default: "USER",
+  },
+  isVerified: {
+    type: Boolean,
+    required: true,
+    default: false
+  },
 });
 
-userSchema.pre('save', async function (next) {
+UserSchema.pre('save', async function (next) {
   const user = this;
   if (user.isModified("password")) {
     user.password = await bcrypt.hash(user.password, parseInt(process.env.BCRYPT_SALT_LENGTH));
@@ -43,7 +48,7 @@ userSchema.pre('save', async function (next) {
   next();
 })
 
-userSchema.pre('update', async function (next) {
+UserSchema.pre('update', async function (next) {
   const user = this;
   if (user.isModified("password")) {
     user.password = await bcrypt.hash(user.password, parseInt(process.env.BCRYPT_SALT_LENGTH));
@@ -51,6 +56,6 @@ userSchema.pre('update', async function (next) {
   next();
 })
 
-User = mongoose.model("user", userSchema);
-module.exports = {User, ROLE}
+User = mongoose.model("user", UserSchema);
+module.exports = {User, ROLE, UserSchema};
 

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const userModel = require('../models/userModel');
 const tokenService = require('../services/token-service');
 
@@ -21,10 +22,20 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   if (req.isAuthenticated()) {
+    console.log(req.user);
     req.user.password = undefined;
     const token = tokenService.sign(req.user);
     res.status(200).send({token: token, userInfo: req.user});
   } else {
     res.status(500).send("Invalid user.");
+  }
+}
+
+exports.loginUsingOAuth2 = async (req, res) => {
+  if (req.user) {
+    req.user.password = undefined;
+    res.redirect(`${process.env.CLIENT_URL}/login?token=${tokenService.sign(req.user)}`);
+  } else {
+    res.redirect(`${process.env.CLIENT_URL}/login`);
   }
 }

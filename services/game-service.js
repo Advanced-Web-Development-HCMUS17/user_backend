@@ -96,10 +96,11 @@ async function createGame(roomId, userFirst, userSecond) {
   return savedGame;
 }
 
-async function saveGame(roomId, history, winner) {
+async function saveGame(roomId, history, winner, chats) {
   const update = {
     history: history,
-    winner: winner
+    winner: winner,
+    chat: chats
   }
 
   const thisGame = await gameModel.findOneAndUpdate({ roomId: roomId }, update);

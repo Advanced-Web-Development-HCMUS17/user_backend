@@ -3,6 +3,7 @@
     <envs>
       <env name="DEBUG" value="user-backend:*" />
       <env name="PORT" value="3000" />
+      <env name="BCRYPT_SALT_LENGTH" value="10" />
     </envs>
     <EXTENSION ID="com.jetbrains.nodejs.run.NodeJSStartBrowserRunConfigurationExtension">
       <browser url="http://localhost:3000/" />
