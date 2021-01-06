@@ -22,6 +22,16 @@ const userSchema = new mongoose.Schema({
     required: true,
     default: 0
   },
+  role: {
+    type: String,
+    required: true,
+    default: "user",
+  },
+  isVerified: {
+    type: Boolean,
+    required: true,
+    default: false
+  },
 });
 
 userSchema.pre('save', async function (next) {
@@ -40,4 +50,5 @@ userSchema.pre('update', async function (next) {
   next();
 })
 
-module.exports = User = mongoose.model("user", userSchema);
+const userModel = mongoose.model("user", userSchema);
+module.exports = {userSchema, userModel};

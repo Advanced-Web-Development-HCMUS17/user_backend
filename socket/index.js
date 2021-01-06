@@ -174,7 +174,7 @@ module.exports = (app) => {
         const winSquares = gameServices.calculateWinner(history,move, row);
         if (winSquares) {
           console.log("Game end!");
-          gameServices.saveGame(lobbyId, history, thisUser);
+          gameServices.saveGame(lobbyId, history, thisUser, chats[lobbyId]);
           userTurn.set(lobbyId,undefined);
           io.to(lobbyId).emit(GAME_EVENT.GAME_END, {newHistory:history, userWin: thisUser, winChain: winSquares,boardSize:row });
         }

@@ -7,7 +7,7 @@ const JWTStrategy = require("passport-jwt").Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
 
-const userModel = require('../models/userModel');
+const {userModel} = require('../models/userModel');
 
 passport.serializeUser((user, done) => {
   done(null, user);
@@ -23,7 +23,6 @@ passport.use('jwt', new JWTStrategy(
     secretOrKey: process.env.JWT_SECRETKEY
   }
   , async (payload, done) => {
-    console.log("payload received", payload);
     try {
       const user = await userModel.findById(payload.sub);
       if (user)
@@ -64,7 +63,8 @@ passport.use('google', new GoogleStrategy({
       const newUser = new userModel({
         "username": userData.name,
         "email": userData.email,
-        "password": `${userData.sub}+!$%${userData.email}`
+        "password": `${userData.sub}+!$%${userData.email}`,
+        "isVerified": true,
       });
       user = await newUser.save();
       if (user.id) {
@@ -89,7 +89,8 @@ passport.use('facebook', new FacebookStrategy({
     const newUser = new userModel({
       "username": userData.name,
       "email": userData.email,
-      "password": `${userData.id}+!$%${userData.email}`
+      "password": `${userData.id}+!$%${userData.email}`,
+      "isVerified": true,
     });
     user = await newUser.save();
     if (user.id) {
