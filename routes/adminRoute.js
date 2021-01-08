@@ -11,25 +11,25 @@ const CLIENT_URL = process.env.CLIENT_URL;
 
 router.get('/user', passport.authenticate('adminJwt', {session: false}),
   async (req, res, next) => {
-  const pageIndex = req.query.pageIndex ? Number(req.query.pageIndex) : 1;
-  const pageSize = req.query.pageSize ? Number(req.query.pageSize) : 10;
-  const skip = pageSize * (pageIndex - 1);
-  const userList = await User.find().limit(pageSize).skip(skip).lean();
-  res.json(userList);
-});
+    const pageIndex = req.query.pageIndex ? Number(req.query.pageIndex) : 1;
+    const pageSize = req.query.pageSize ? Number(req.query.pageSize) : 10;
+    const skip = pageSize * (pageIndex - 1);
+    const userList = await User.find().limit(pageSize).skip(skip).lean();
+    res.json(userList);
+  });
 
 router.get('/user/:userId', passport.authenticate('adminJwt', {session: false}),
   async (req, res, next) => {
-  const userId = req.params.userId;
+    const userId = req.params.userId;
 
-  const user = await User.findById(userId).lean();
+    const user = await User.findById(userId).lean();
 
-  if (user) {
-    res.json(user);
-  } else {
-    res.status(404).json({message: "user not found"});
-  }
-});
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({message: "user not found"});
+    }
+  });
 
 router.get('/user/:userId/game', passport.authenticate('adminJwt', {session: false}),
   async (req, res, next) => {
@@ -51,10 +51,10 @@ router.get('/user', passport.authenticate('adminJwt', {session: false}),
     res.json(users);
   });
 
-router.put('/user/role', passport.authenticate('adminJwt', {session: false}),
+router.put('/user/:userId/role', passport.authenticate('adminJwt', {session: false}),
   async (req, res, nesxt) => {
     const role = req.body.role;
-    const userId = req.body.userId;
+    const userId = req.params.userId;
     if (Object.values(ROLE).includes(role)) {
       const user = await User.findById(userId).lean();
       if (user) {
@@ -75,12 +75,12 @@ router.put('/user/role', passport.authenticate('adminJwt', {session: false}),
 
 router.get('/game', passport.authenticate('adminJwt', {session: false}),
   async (req, res, next) => {
-  const pageIndex = req.query.pageIndex ? req.query.pageIndex : 1;
-  const pageSize = req.query.pageSize ? Number(req.query.pageSize) : 10;
-  const skip = pageSize * (pageIndex - 1);
-  const games = await Game.find().skip(skip).limit(pageSize).lean();
-  res.json(games);
-});
+    const pageIndex = req.query.pageIndex ? req.query.pageIndex : 1;
+    const pageSize = req.query.pageSize ? Number(req.query.pageSize) : 10;
+    const skip = pageSize * (pageIndex - 1);
+    const games = await Game.find().skip(skip).limit(pageSize).lean();
+    res.json(games);
+  });
 
 router.get('/game/:gameId', async (req, res) => {
   const {gameId} = req.params;
@@ -103,7 +103,7 @@ router.get('/info', passport.authenticate('adminJwt', {session: false}), (req, r
   res.json(req.user);
 });
 
-router.post('/reset-password/request/', async (req, res,next) => {
+router.post('/reset-password/request/', async (req, res, next) => {
   const {email} = req.body;
   if (!email)
     return res.status(400).json({message: "Bad request"});
