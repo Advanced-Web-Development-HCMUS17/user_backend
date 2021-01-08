@@ -48,7 +48,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/users', usersRouter);
-app.use('/admin', passport.authenticate('adminJwt', {session: false}), adminRouter);
+app.use('/admin', adminRouter);
 
 
 // catch 404 and forward to error handler
