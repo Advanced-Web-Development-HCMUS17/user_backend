@@ -37,8 +37,6 @@ passport.use('local', new LocalStrategy({
   usernameField: 'email',
   passwordField: 'password'
 }, async (email, password, done) => {
-  console.log(email);
-  console.log(password);
   try {
     const user = await User.findOne({email}).select('+password');
     if (user && bcrypt.compareSync(password, user.password))
@@ -60,7 +58,7 @@ passport.use('google', new GoogleStrategy({
     if (user)
       return done(null, user);
     else {
-      const newUser = new userModel({
+      const newUser = new User({
         "username": userData.name,
         "email": userData.email,
         "password": `${userData.sub}+!$%${userData.email}`,
@@ -115,6 +113,21 @@ passport.use('adminJwt', new JWTStrategy(
       return done(error)
     }
   }
-))
+));
+
+passport.use('adminLocal', new LocalStrategy({
+  usernameField: 'email',
+  passwordField: 'password'
+}, async (email, password, done) => {
+  try {
+    const user = await User.findOne({email}).select('+password');
+    if (user && bcrypt.compareSync(password, user.password) && user.role === ROLE.ADMIN)
+      return done(null, user);
+    return done(null, false);
+  } catch (error) {
+    return done(error);
+  }
+}));
+
 
 module.exports = passport;
