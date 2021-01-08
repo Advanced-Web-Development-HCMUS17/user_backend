@@ -38,7 +38,7 @@ router.get('/user',
   async (req, res, next) => {
     const key = req.query.key;
 
-    const regexKey = new RegExp(key,'i');
+    const regexKey = new RegExp(key, 'i');
 
     const users = await User.find({$or: [{username: regexKey}, {email: regexKey}]}).lean();
     res.json(users);
@@ -72,6 +72,16 @@ router.get('/game', async (req, res, next) => {
   const skip = pageSize * (pageIndex - 1);
   const games = await Game.find().skip(skip).limit(pageSize).lean();
   res.json(games);
-})
+});
+router.get('/game/:gameId', async (req, res) => {
+  const {gameId} = req.params;
+  const game = await Game.findById(gameId).lean();
+  if (game) {
+    res.json(game);
+  } else {
+    res.status(404).send();
+  }
+
+});
 
 module.exports = router;

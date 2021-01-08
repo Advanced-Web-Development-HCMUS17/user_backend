@@ -108,7 +108,7 @@ passport.use('adminJwt', new JWTStrategy(
   async (payload, done) => {
     try {
       const user = await User.findOne({_id: payload.sub._id}).select('+password');
-      if (user && user.role !== ROLE.ADMIN)
+      if (user && user.role === ROLE.ADMIN)
         return done(null, user);
       return done(null, false);
     } catch (error) {
