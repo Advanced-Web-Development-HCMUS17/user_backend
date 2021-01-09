@@ -41,7 +41,7 @@ router.get('/user/:userId/game', passport.authenticate('adminJwt', {session: fal
     res.json(games);
   });
 
-router.get('/user', passport.authenticate('adminJwt', {session: false}),
+router.get('/finduser', passport.authenticate('adminJwt', {session: false}),
   async (req, res, next) => {
     const key = req.query.key;
 
