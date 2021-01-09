@@ -8,7 +8,7 @@ const gameServices = require('../services/game-service');
 const {checkHistory} = require('../services/game-service');
 const {row} = require('../constants/constants.js');
 
-const User = require('../models/userModel');
+const {User} = require('../models/userModel');
 
 const USER_ROOM_PREFIX = 'user';
 
