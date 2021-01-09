@@ -60,7 +60,7 @@ passport.use('google', new GoogleStrategy({
     if (user)
       return done(null, user);
     else {
-      const newUser = new userModel({
+      const newUser = new User({
         "username": userData.name,
         "email": userData.email,
         "password": `${userData.sub}+!$%${userData.email}`,
