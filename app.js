@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 5000;
 const http = require('http');
 const Socket = require("socket.io");
 const passport = require('./middleware/passport');
+const {User} = require('./models/userModel');
 
 
 const server = http.createServer(app);
@@ -49,7 +50,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/users', usersRouter);
 app.use('/admin', adminRouter);
-
+app.get('/leaderboard', async (req, res) => {
+  const ldb = await User.find().sort([['rating', -1]]).limit(15).lean();
+  res.json(ldb);
+});
 
 // catch 404 and forward to error handler
 // app.use(function (req, res, next) {

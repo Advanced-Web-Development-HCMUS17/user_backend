@@ -1,6 +1,6 @@
-const { Lobby, PLAYER_1 } = require('../entity/Lobby');
+const {Lobby, PLAYER_1} = require('../entity/Lobby');
 
-const { USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT, GAME_EVENT } = require("./eventConstant");
+const {USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT, GAME_EVENT} = require("./eventConstant");
 const tokenServices = require('../services/token-service');
 
 const {v4: uuidV4} = require('uuid');
@@ -35,10 +35,10 @@ module.exports = (app) => {
     if (socket.user) {
       users[socket.user._id] = socket.user;
       socket.join(USER_ROOM_PREFIX + socket.user._id);
-      io.emit(USER_EVENT.ONLINE, {user: socket.user, id: socket.user.id});
-
+      io.emit(LIST_ONLINE_USER_EVENT, users);
     }
-    io.to(socket.id).emit(LIST_ONLINE_USER_EVENT, users);
+    socket.emit(LIST_ONLINE_USER_EVENT, users);
+    socket.emit(LOBBY_EVENT.LIST_LOBBY, lobbies);
 
     socket.on(LOBBY_EVENT.INVITE, async ({email}) => {
       const user = await User.findOne({email: email}).lean();
@@ -57,7 +57,7 @@ module.exports = (app) => {
     socket.on('disconnect', () => {
         if (socket.user) {
           users[socket.user._id] = undefined;
-          io.emit(USER_EVENT.OFFLINE, {user: socket.user, id: socket.user.id});
+          io.emit(LIST_ONLINE_USER_EVENT, users);
         }
         if (socket.gameRoom) {
           const {lobbyId, player} = socket.gameRoom;
@@ -75,6 +75,12 @@ module.exports = (app) => {
         const leftPlayer = lobby.leave(player);
         socket.leave(lobbyId);
         io.to(lobbyId).emit(LOBBY_EVENT.LEAVE_LOBBY, {leftPlayer: leftPlayer});
+
+        if (!lobby.player1 && !lobby.player2) {
+          lobbies[lobbyId] = undefined;
+        }
+        io.to(lobby.getRoomName()).emit(LOBBY_EVENT.LOBBY_INFO, lobby);
+        io.emit(LOBBY_EVENT.LIST_LOBBY, lobbies);
       }
     });
 
@@ -87,6 +93,8 @@ module.exports = (app) => {
       socket.join(roomId);
       socket.gameRoom = {lobbyId: lobbyId, player: PLAYER_1};
       socket.emit(LOBBY_EVENT.CREATE_LOBBY, {roomId: roomId, player: PLAYER_1});
+
+      io.emit(LOBBY_EVENT.LIST_LOBBY, lobbies);
     });
 
     socket.on(LOBBY_EVENT.JOIN_LOBBY, ({roomId}) => {
@@ -102,6 +110,7 @@ module.exports = (app) => {
         socket.gameRoom = {lobbyId: lobby.getRoomName(), player: PLAYER_1};
         io.to(lobby.getRoomName()).emit(LOBBY_EVENT.JOIN_LOBBY, {user: socket.user, player: join});
         io.to(lobby.getRoomName()).emit(LOBBY_EVENT.LOBBY_INFO, lobby);
+        io.emit(LOBBY_EVENT.LIST_LOBBY, lobbies);
       }
     });
 
@@ -121,7 +130,7 @@ module.exports = (app) => {
     GAME SOCKET
      */
 
-    socket.on(GAME_EVENT.GAME_READY, () => {
+    socket.on(GAME_EVENT.GAME_READY, async () => {
 
       if (socket.gameRoom && socket.user) {
         console.log("Yes");
@@ -156,7 +165,7 @@ module.exports = (app) => {
               }
               userTurn.set(lobbyId, userFirst);
 
-              gameServices.createGame(lobbyId, userFirst, userSecond);
+              await gameServices.createGame(lobbyId, userFirst, userSecond);
 
               io.to(lobbyId).emit(GAME_EVENT.GAME_START, {
                 userFirst: userFirst,
@@ -171,7 +180,7 @@ module.exports = (app) => {
     });
 
 
-    socket.on(GAME_EVENT.SEND_MOVE, ({move}) => {
+    socket.on(GAME_EVENT.SEND_MOVE, async ({move}) => {
       const lobbyId = socket.gameRoom.lobbyId;
       const thisUser = socket.user.username;
       let thisTurn = userTurn.get(lobbyId);
@@ -189,7 +198,7 @@ module.exports = (app) => {
         const winSquares = gameServices.calculateWinner(history, move, row);
         if (winSquares) {
           console.log("Game end!");
-          gameServices.saveGame(lobbyId, history, thisUser);
+          await gameServices.saveGame(lobbyId, history, thisUser);
           userTurn.set(lobbyId, undefined);
           io.to(lobbyId).emit(GAME_EVENT.GAME_END, {
             newHistory: history,
