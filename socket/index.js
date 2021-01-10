@@ -198,7 +198,7 @@ module.exports = (app) => {
         const winSquares = gameServices.calculateWinner(history, move, row);
         if (winSquares) {
           console.log("Game end!");
-          await gameServices.saveGame(lobbyId, history, thisUser);
+          gameServices.saveGame(lobbyId, history, thisUser, chats[lobbyId]);
           userTurn.set(lobbyId, undefined);
           io.to(lobbyId).emit(GAME_EVENT.GAME_END, {
             newHistory: history,
@@ -212,9 +212,7 @@ module.exports = (app) => {
         }
       }
     })
-
   });
-
 }
 
 const find = (array, value) => {
