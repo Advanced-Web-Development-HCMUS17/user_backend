@@ -124,11 +124,11 @@ module.exports = (app) => {
       if (socket.gameRoom && socket.user) {
         console.log("Yes");
         const lobbyId = socket.gameRoom.lobbyId;
-        const thisUser = socket.user.username;
+        const thisUser = socket.user;
         console.log(lobbyId, thisUser);
         let thisLobby = lobbies[lobbyId];
         const { player1, player2 } = thisLobby.getPlayers();
-        if ((player1 && player1.username === thisUser) || (player2 && player2.username === thisUser)) {
+        if ((player1 && player1.username === thisUser.username) || (player2 && player2.username === thisUser.username)) {
 
           let readyList = ready.get(lobbyId);
           if (!readyList) {
@@ -153,7 +153,7 @@ module.exports = (app) => {
               userFirst = readyList[1];
               userSecond = readyList[0];
             }
-            userTurn.set(lobbyId, userFirst);
+            userTurn.set(lobbyId, userFirst.username);
 
             gameServices.createGame(lobbyId, userFirst, userSecond);
 
@@ -175,14 +175,23 @@ module.exports = (app) => {
       if (socket.gameRoom && socket.user) {
         console.log("User sent: " + socket.user.username);
         const lobbyId = socket.gameRoom.lobbyId;
-        const thisUser = socket.user.username;
+        const thisUser = socket.user;
         let thisTurn = userTurn.get(lobbyId);
         let history = histories.get(lobbyId);
-        if (checkHistory(history, move) && thisTurn === thisUser) {
+        if (checkHistory(history, move) && thisTurn === thisUser.username) {
           // set userTurn
 
           const { player1, player2 } = lobbies[lobbyId].getPlayers();
-          thisTurn = (player1.username === thisTurn) ? player2.username : player1.username;
+          if (player1 && player2) {
+            // Two players are still in the lobby
+            thisTurn = (player1.username === thisTurn) ? player2.username : player1.username;
+          }
+          else if (player1 || player2) {
+            //One player left
+            const p1 = ready.get(lobbyId)[0];
+            const p2 = ready.get(lobbyId)[1];
+            thisTurn = (p1.username === thisTurn) ? p2.username : p1.username;
+          }
           userTurn.set(lobbyId, thisTurn);
 
           history.push(move);
@@ -191,10 +200,10 @@ module.exports = (app) => {
           const winSquares = gameServices.calculateWinner(history, move, row);
           if (winSquares) {
             console.log("Game end!");
-            gameServices.saveGame(lobbyId, history, thisUser);
+            gameServices.saveGame(lobbyId, history, thisUser.username, chats);
             userTurn.set(lobbyId, undefined);
-            ended.push(lobbyId);
-            io.to(lobbyId).emit(GAME_EVENT.GAME_END, { newHistory: history, userWin: thisUser, winChain: winSquares, boardSize: row });
+            delete lobbies[lobbyId];
+            io.to(lobbyId).emit(GAME_EVENT.GAME_END, { newHistory: history, userWin: thisUser.username, winChain: winSquares, boardSize: row });
           }
           else {
             console.log("Send move to client!");
@@ -210,10 +219,11 @@ module.exports = (app) => {
       socket.emit(HOME_EVENT.GET_LOBBIES, { lobbiesID: keys, lobbies: values })
     });
 
-    socket.on(REPLAY_EVENT.GET_LOBBIES, async ({}) => {
+    socket.on(REPLAY_EVENT.GET_LOBBIES, async ({ }) => {
       if (socket.user) {
         const games = await gameServices.getGames(socket.user.username);
-        socket.emit(REPLAY_EVENT.GET_LOBBIES,{lobbies:games});
+        console.log(games);
+        socket.emit(REPLAY_EVENT.GET_LOBBIES, { lobbies: games, boardSize: row });
       }
     })
 

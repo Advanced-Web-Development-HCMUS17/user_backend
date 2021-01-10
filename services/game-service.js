@@ -1,7 +1,5 @@
 
-const gameModel = require('../models/gameModel');
-
-const COUNT2WIN = 5;
+const gameModel = require('../models/gameModel.js');
 
 function ulti(history, rowNow, colNow, xValue, yValue, sign, row) {
   //console.log(history)
@@ -93,45 +91,53 @@ async function createGame(roomId, userFirst, userSecond) {
     winner: null
   });
   let savedGame = await newGame.save();
+  console.log("Game created!!");
   return savedGame;
 }
 
-async function saveGame(roomId, history, winner) {
+async function saveGame(roomId, history, winner, chats) {
   const update = {
     history: history,
-    winner: winner
+    winner: winner,
+    chats: chats
   }
 
   const thisGame = await gameModel.findOneAndUpdate({ roomId: roomId }, update);
   return thisGame;
 }
 
-async function getGames(username)
-{
-  const filter1 = {
-    user1: username
-  };
-  const filter2 = {
-    user2: username
-  };
-  const games1 = await gameModel.find(filter1);
-  const games2 = await gameModel.find(filter2);
-  if (games1 && games2)
-  {
+async function getGames(username) {
+  console.log("find:", username);
+  // const filter1 = {
+  //   user1: {
+  //     $elemMatch: {
+  //       username: username,
+  //     }
+  //   }
+  // };
+  // const filter2 = {
+  //   user2: {
+  //     $elemMatch: {
+  //       username: username,
+  //     }
+  //   }
+  // };
+
+  const games1 = await gameModel.find({'user1.username':username});
+  const games2 = await gameModel.find({'user2.username':username});
+  if (games1.length > 0 && games2.length > 0) {
     const games = games1.concat(games2);
-    console.log(games);
-    
+
     return games;
   }
-  else if (games1)
-  {
+  else if (games1.length > 0) {
     return games1;
   }
-  else if (games2) {
+  else if (games2.length > 0) {
     return games2;
   }
-  else return null;
+  else return null; 
 }
-const gameServices = { calculateWinner, refactorArray, getRandom, checkHistory, createGame, saveGame, getGames};
+const gameServices = { calculateWinner, refactorArray, getRandom, checkHistory, createGame, saveGame, getGames };
 
 module.exports = gameServices;

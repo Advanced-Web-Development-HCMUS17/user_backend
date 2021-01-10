@@ -5,7 +5,7 @@ const bcrypt = require("bcryptjs");
 const LocalStrategy = require("passport-local").Strategy;
 const JWTStrategy = require("passport-jwt").Strategy;
 
-const userModel = require('../models/userModel');
+const {User} = require('../models/userModel');
 
 passport.use('jwt', new JWTStrategy(
   {
@@ -15,7 +15,7 @@ passport.use('jwt', new JWTStrategy(
   , async (payload, done) => {
     console.log("payload received", payload);
     try {
-      const user = await userModel.findById(payload.sub);
+      const user = await User.findById(payload.sub);
       if (user)
         return done(null, user);
       return done(null, false);
@@ -31,7 +31,7 @@ passport.use('local', new LocalStrategy({
   console.log(email);
   console.log(password);
   try {
-    const user = await userModel.findOne({email}).select('+password');
+    const user = await User.findOne({email}).select('+password');
     if (user && bcrypt.compareSync(password, user.password))
       return done(null, user);
     return done(null, false);
