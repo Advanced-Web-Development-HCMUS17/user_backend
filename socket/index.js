@@ -63,7 +63,12 @@ module.exports = (app) => {
           const {lobbyId, player} = socket.gameRoom;
           const lobby = lobbies[lobbyId];
           const leftPlayer = lobby.leave(player);
+          if (!lobby.player1 && !lobby.player2) {
+            lobbies[lobbyId] = undefined;
+          }
           io.to(lobbyId).emit(LOBBY_EVENT.LEAVE_LOBBY, {leftPlayer: leftPlayer});
+          io.emit(LOBBY_EVENT.LIST_LOBBY, lobbies);
+
         }
       }
     );
