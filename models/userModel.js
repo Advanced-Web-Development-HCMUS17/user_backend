@@ -38,6 +38,13 @@ const UserSchema = new mongoose.Schema({
     required: true,
     default: false
   },
+  avatar: {
+    type: String,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 UserSchema.pre('save', async function (next) {
