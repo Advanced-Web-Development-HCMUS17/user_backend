@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const passport = require('../middleware/passport');
 const controller = require('../controllers/user-controller');
+const {Game} = require('../models/gameModel');
 
 
 router.post('/register', controller.register);
@@ -16,7 +17,25 @@ router.get('/info', passport.authenticate('jwt', {session: false}), (req, res, n
   res.json(req.user);
 });
 
+router.get('/game', passport.authenticate('jwt', {session: false}),
+  async (req, res, next) => {
+    const pageIndex = req.query.pageIndex ? req.query.pageIndex : 1;
+    const pageSize = req.query.pageSize ? Number(req.query.pageSize) : 10;
+    const skip = pageSize * (pageIndex - 1);
+    const userId = req.user._id;
+    const games = await Game.find({$or: [{user1: userId}, {user2: userId}]}).limit(pageSize).skip(skip).lean();
+    res.json(games);
+  });
 
+router.get('/game/:gameId', async (req, res) => {
+  const {gameId} = req.params;
+  const game = await Game.findById(gameId).lean();
+  if (game) {
+    res.json(game);
+  } else {
+    res.status(404).send();
+  }
+});
 
 
 module.exports = router;
