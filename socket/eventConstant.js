@@ -20,6 +20,14 @@ const GAME_EVENT = {
   SEND_MOVE: 'game/send',
   GAME_END: 'game/end'
 };
+const HOME_EVENT = {
+  GET_LOBBIES: 'home/lobbies',
+}
+
+const REPLAY_EVENT = {
+  GET_LOBBIES: 'replay/lobbies',
+
+}
 
 const LIST_ONLINE_USER_EVENT = 'onlineUserList';
 
@@ -29,4 +37,4 @@ const CHAT_EVENT = {
 }
 
 
-module.exports = {USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT, GAME_EVENT};
+module.exports = { USER_EVENT, LIST_ONLINE_USER_EVENT, LOBBY_EVENT, CHAT_EVENT, GAME_EVENT, HOME_EVENT,REPLAY_EVENT };

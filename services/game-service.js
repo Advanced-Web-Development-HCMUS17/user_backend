@@ -106,6 +106,33 @@ async function saveGame(roomId, history, winner, chats) {
   const thisGame = await gameModel.findOneAndUpdate({ roomId: roomId }, update);
   return thisGame;
 }
-const gameServices = { calculateWinner, refactorArray, getRandom, checkHistory, createGame, saveGame };
+
+async function getGames(username)
+{
+  const filter1 = {
+    user1: username
+  };
+  const filter2 = {
+    user2: username
+  };
+  const games1 = await gameModel.find(filter1);
+  const games2 = await gameModel.find(filter2);
+  if (games1 && games2)
+  {
+    const games = games1.concat(games2);
+    console.log(games);
+    
+    return games;
+  }
+  else if (games1)
+  {
+    return games1;
+  }
+  else if (games2) {
+    return games2;
+  }
+  else return null;
+}
+const gameServices = { calculateWinner, refactorArray, getRandom, checkHistory, createGame, saveGame, getGames};
 
 module.exports = gameServices;

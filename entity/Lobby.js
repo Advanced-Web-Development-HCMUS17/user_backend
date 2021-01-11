@@ -7,6 +7,7 @@ class Lobby {
     this.id = id;
     this.player1 = null;
     this.player2 = null;
+    this.ended = false;
   }
 
   join(player) {
@@ -28,19 +29,36 @@ class Lobby {
   leave(player) {
     if (player === PLAYER_1) {
       this.player1 = null;
+      if (this.checkAllLeft() === true)
+      {
+        this.ended = true;
+      }
       return PLAYER_1;
     } else if (player === PLAYER_2) {
       this.player2 = null;
+      if (this.checkAllLeft() === true)
+      {
+        this.ended = true;
+      }
       return PLAYER_2;
     }
     return null;
   }
-
+  checkAllLeft() {
+    if (this.player1 || this.player2)
+    {
+      return false;
+    }
+    return true;
+  }
   getRoomName() {
     return ROOM_PREFIX + this.id;
   }
   getPlayers() {
     return { player1: this.player1, player2: this.player2 };
+  }
+  isEnded() {
+    return this.ended;
   }
 }
 
