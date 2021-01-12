@@ -40,6 +40,26 @@ const UserSchema = new mongoose.Schema({
   },
 });
 
+const UserSchema_nopw = new mongoose.Schema({
+  username: {
+    type: String,
+  },
+  email: {
+    type: String,
+    require: true,
+  },
+  rating: {
+    type: Number,
+  },
+  role: {
+    type: String,
+    required: true,
+  },
+  isVerified: {
+    type: Boolean,
+  },
+});
+
 UserSchema.pre('save', async function (next) {
   const user = this;
   if (user.isModified("password")) {
@@ -57,5 +77,4 @@ UserSchema.pre('findOneAndUpdate', async function (next) {
 })
 
 User = mongoose.model("user", UserSchema);
-module.exports = {User, ROLE, UserSchema};
-
+module.exports = {User, ROLE, UserSchema: UserSchema_nopw};

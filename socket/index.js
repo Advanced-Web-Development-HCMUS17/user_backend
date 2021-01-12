@@ -73,7 +73,7 @@ module.exports = (app) => {
       }
     );
 
-    socket.on(LOBBY_EVENT.LEAVE_LOBBY, () => {
+    socket.on(LOBBY_EVENT.LEAVE_LOBBY, async () => {
       if (socket.gameRoom) {
         const {lobbyId, player} = socket.gameRoom;
         const lobby = lobbies[lobbyId];
@@ -84,7 +84,7 @@ module.exports = (app) => {
 
           // If the game is being played
           if (userTurn.get(lobbyId)) {
-            gameServices.saveGame(lobbyId, histories.get[lobbyId], 'Draw');
+            await gameServices.saveGame(lobbyId, histories.get[lobbyId], 'Draw', chats[lobbyId]);
 
           }
           delete lobbies[lobbyId];
@@ -164,11 +164,11 @@ module.exports = (app) => {
       if (socket.gameRoom && socket.user) {
         console.log("Yes");
         const lobbyId = socket.gameRoom.lobbyId;
-        const thisUser = socket.user.username;
+        const thisUser = socket.user;
         console.log(lobbyId, thisUser);
         let thisLobby = lobbies[lobbyId];
         const {player1, player2} = thisLobby.getPlayers();
-        if ((player1 && player1.username === thisUser) || (player2 && player2.username === thisUser)) {
+        if ((player1 && player1.email === thisUser.email) || (player2 && player2.email === thisUser.email)) {
 
           let readyList = ready.get(lobbyId);
           if (!readyList) {
@@ -196,8 +196,8 @@ module.exports = (app) => {
             await gameServices.createGame(lobbyId, userFirst, userSecond);
 
             io.to(lobbyId).emit(GAME_EVENT.GAME_START, {
-              userFirst: userFirst,
-              userSecond: userSecond,
+              userFirst: userFirst.username,
+              userSecond: userSecond.username,
               boardSize: row
             });
             console.log("Worked");
@@ -212,14 +212,14 @@ module.exports = (app) => {
         if (socket.gameRoom && socket.user) {
           console.log("User sent: " + socket.user.username);
           const lobbyId = socket.gameRoom.lobbyId;
-          const thisUser = socket.user.username;
+          const thisUser = socket.user;
           let thisTurn = userTurn.get(lobbyId);
           let history = histories.get(lobbyId);
-          if (checkHistory(history, move) && thisTurn === thisUser) {
+          if (checkHistory(history, move) && thisTurn.email === thisUser.email) {
             // set userTurn
 
             const {player1, player2} = lobbies[lobbyId].getPlayers();
-            thisTurn = (player1.username === thisTurn) ? player2.username : player1.username;
+            thisTurn = (player1.email === thisTurn.email) ? player2 : player1;
             userTurn.set(lobbyId, thisTurn);
 
             history.push(move);
@@ -232,13 +232,13 @@ module.exports = (app) => {
               userTurn.set(lobbyId, undefined);
               io.to(lobbyId).emit(GAME_EVENT.GAME_END, {
                 newHistory: history,
-                userWin: thisUser,
+                userWin: thisUser.username,
                 winChain: winSquares,
                 boardSize: row
               });
             } else {
               console.log("Send move to client!");
-              io.to(lobbyId).emit(GAME_EVENT.SEND_MOVE, {newHistory: history, userTurn: thisTurn, boardSize: row});
+              io.to(lobbyId).emit(GAME_EVENT.SEND_MOVE, {newHistory: history, userTurn: thisTurn.username, boardSize: row});
             }
           }
         }
@@ -248,9 +248,9 @@ module.exports = (app) => {
   });
 }
 
-const find = (array, value) => {
-  for (let i = 0; i < array.length; i++) {
-    if (array[i] === value) {
+const find = (userList, user) => {
+  for (let i = 0; i < userList.length; i++) {
+    if (userList[i].email === user.email) {
       return true;
     }
   }
