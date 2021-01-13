@@ -246,8 +246,20 @@ module.exports = (app) => {
               boardSize: row
             });
           } else {
+            if (history.length === row*row) {
+              // Draw
+              gameServices.saveGame(lobbyId, history, "Draw", chats);
+              io.to(lobbyId).emit(GAME_EVENT.GAME_END, {
+                newHistory: history,
+                userWin: "Draw",
+                winChain: null,
+                boardSize: row
+              });
+            }
+            else {
             console.log("Send move to client!");
             io.to(lobbyId).emit(GAME_EVENT.SEND_MOVE, {newHistory: history, userTurn: thisTurn, boardSize: row});
+            }
           }
         }
       }
@@ -259,14 +271,6 @@ module.exports = (app) => {
       socket.emit(HOME_EVENT.GET_LOBBIES, {lobbiesID: keys, lobbies: values})
     });
 
-    socket.on(REPLAY_EVENT.GET_LOBBIES, async ({}) => {
-        if (socket.user) {
-          const games = await gameServices.getGames(socket.user.username);
-          console.log(games);
-          socket.emit(REPLAY_EVENT.GET_LOBBIES, {lobbies: games, boardSize: row});
-        }
-      }
-    );
 
   });
 }

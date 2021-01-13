@@ -4,7 +4,7 @@ const storage = multer.memoryStorage()
 const upload = multer({storage: storage})
 const passport = require('../middleware/passport');
 const controller = require('../controllers/user-controller');
-const {Game} = require('../models/gameModel');
+const Game = require('../models/gameModel');
 
 router.post('/register', controller.register);
 router.get('/verification/verify-account/:userId/:secretCode', controller.verify);
@@ -27,12 +27,14 @@ router.get('/game', passport.authenticate('jwt', {session: false}),
     const pageSize = req.query.pageSize ? Number(req.query.pageSize) : 10;
     const skip = pageSize * (pageIndex - 1);
     const userId = req.user._id;
-    const games = await Game.find({$or: [{user1: userId}, {user2: userId}]}).limit(pageSize).skip(skip).lean();
+    console.log('id: ',userId);
+    const games = await Game.find({$or: [{"user1._id": userId}, {"user2._id": userId}]}).limit(pageSize).skip(skip).lean();
     res.json(games);
   });
 
 router.get('/game/:gameId', async (req, res) => {
   const {gameId} = req.params;
+  console.log('gameId: ',gameId);
   const game = await Game.findById(gameId).lean();
   if (game) {
     res.json(game);
