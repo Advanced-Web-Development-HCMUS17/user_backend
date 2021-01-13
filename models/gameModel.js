@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const ChatMessage = require('./chatSchema');
-const {UserSchema} = require("./userModel");
-
+const {UserSchema} = require('./userModel');
 const gameSchema = new mongoose.Schema({
   roomId: {
     type: String,
@@ -22,8 +21,7 @@ const gameSchema = new mongoose.Schema({
     type: Date,
   },
   winner: {
-    type: UserSchema,
-    default: null,
+    type: String,
   },
   chat: {
     type: [ChatMessage],

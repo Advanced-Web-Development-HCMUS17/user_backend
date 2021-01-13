@@ -15,8 +15,9 @@ const UserSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
-    select: false
+    //required: true,
+    select: false,
+    default: ""
   },
   email: {
     type: String,
@@ -68,13 +69,14 @@ UserSchema.pre('save', async function (next) {
   next();
 })
 
-UserSchema.pre('findOneAndUpdate', async function (next) {
-  const user = this._update;
-  if (user.password) {
+UserSchema.pre('update', async function (next) {
+  const user = this;
+  if (user.isModified("password")) {
     user.password = await bcrypt.hash(user.password, parseInt(process.env.BCRYPT_SALT_LENGTH));
   }
   next();
 })
 
+
 User = mongoose.model("user", UserSchema);
-module.exports = {User, ROLE, UserSchema: UserSchema_nopw};
+module.exports = {User,ROLE, UserSchema};
