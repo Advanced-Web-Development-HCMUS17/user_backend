@@ -257,7 +257,7 @@ module.exports = (app) => {
           const winSquares = gameServices.calculateWinner(history, move, row);
           if (winSquares) {
             console.log("Game end!");
-            gameServices.saveGame(lobbyId, history, thisUser.username, chats);
+            gameServices.saveGame(lobbyId, history, thisUser.username, chats[lobbyId]);
             userTurn.set(lobbyId, undefined);
             delete lobbies[lobbyId];
             io.to(lobbyId).emit(GAME_EVENT.GAME_END, {
@@ -269,7 +269,7 @@ module.exports = (app) => {
           } else {
             if (history.length === row*row) {
               // Draw
-              gameServices.saveGame(lobbyId, history, "Draw", chats);
+              gameServices.saveGame(lobbyId, history, "Draw", chats[lobbyId]);
               io.to(lobbyId).emit(GAME_EVENT.GAME_END, {
                 newHistory: history,
                 userWin: "Draw",
