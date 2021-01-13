@@ -1,6 +1,6 @@
 
 const gameModel = require('../models/gameModel.js');
-
+const { User } = require('../models/userModel.js');
 function ulti(history, rowNow, colNow, xValue, yValue, sign, row) {
   //console.log(history)
   let i, j;
@@ -101,8 +101,12 @@ async function saveGame(roomId, history, winner, chats) {
     winner: winner,
     chats: chats
   }
-
   const thisGame = await gameModel.findOneAndUpdate({ roomId: roomId }, update);
+
+  const { newRating1, newRating2 } = calculateRating(thisGame.user1.rating, thisGame.user2.rating,
+    thisGame.user1.username === winner ? 1 : (thisGame.user2.username === winner) ? 3 : 2);
+  await User.findOneAndUpdate({ _id: thisGame.user1._id }, { rating: newRating1 });
+  await User.findOneAndUpdate({ _id: thisGame.user2._id }, { rating: newRating2 });
   return thisGame;
 }
 
@@ -123,8 +127,8 @@ async function getGames(username) {
   //   }
   // };
 
-  const games1 = await gameModel.find({'user1.username':username});
-  const games2 = await gameModel.find({'user2.username':username});
+  const games1 = await gameModel.find({ 'user1.username': username });
+  const games2 = await gameModel.find({ 'user2.username': username });
   if (games1.length > 0 && games2.length > 0) {
     const games = games1.concat(games2);
 
@@ -138,6 +142,66 @@ async function getGames(username) {
   }
   else return null;
 }
-const gameServices = { calculateWinner, refactorArray, getRandom, checkHistory, createGame, saveGame, getGames };
+
+// resultType = 1 -> user1 win
+// resultType = 2 -> draw
+// resultType = 3 -> user2 win
+function calculateRating(rating1, rating2, resultType) {
+  let newRating1, newRating2;
+  let bigger = rating1 > rating2 ? rating1 : rating2;
+  const threshold = bigger * 0.1;
+  const distance = Math.abs(rating1 - rating2);
+  let result;
+  if (resultType === 1 || resultType === 3) {
+    if (distance <= 0.2 * bigger) {
+      result = bigger * 0.03 + distance * 0.1 <= threshold ? bigger * 0.03 + distance * 0.1 : threshold
+    }
+    else {
+      result = bigger * 0.04 + distance * 0.1 <= threshold ? bigger * 0.04 + distance * 0.1 : threshold
+    }
+  }
+  else {
+    if (distance <= 0.2 * bigger) {
+      result = distance * 0.05 <= threshold ? distance * 0.05 : threshold
+    }
+    else {
+      result = distance * 0.08 <= threshold ? distance * 0.08 : threshold
+    }
+  }
+
+  if (resultType === 1) {
+    newRating1 = rating1 + result;
+    newRating2 = rating2 - result;
+  }
+  else if (resultType === 2) {
+    if (newRating1 === newRating2) {
+      // do nothing
+    }
+    else {
+      if (rating1 === bigger) {
+        newRating1 = rating1 + result;
+        newRating2 = rating2 - result;
+      }
+      else {
+        newRating1 = rating1 - result;
+        newRating2 = rating2 + result;
+      }
+    }
+  }
+  else {
+    newRating1 = rating1 - result;
+    newRating2 = rating2 + result;
+  }
+  newRating1 = newRating1 >= 0 ? newRating1 : 0;
+  newRating2 = newRating2 >= 0 ? newRating2 : 0;
+  newRating1 = Math.round(newRating1); newRating2 = Math.round(newRating2);
+  return { newRating1, newRating2 };
+}
+
+
+const gameServices = {
+  calculateWinner, refactorArray, getRandom, checkHistory, createGame, saveGame,
+  getGames
+};
 
 module.exports = gameServices;
