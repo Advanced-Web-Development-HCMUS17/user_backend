@@ -7,6 +7,7 @@ const mailService = require('../services/mail-service');
 const FormData = require('form-data');
 const axios = require("axios");
 
+const CLIENT_URL = process.env.CLIENT_URL;
 const SERVER_URL = process.env.SERVER_URL;
 
 exports.register = async (req, res) => {
@@ -62,7 +63,7 @@ exports.loginUsingOAuth2 = async (req, res) => {
   if (!req.user)
     return res.redirect('/login');
   req.user.password = undefined;
-  res.redirect(`${req.get('Origin')}/login/${tokenService.sign(req.user)}`);
+  res.redirect(`${CLIENT_URL}/login/${tokenService.sign(req.user)}`);
 }
 
 exports.resetPassword = async (req, res) => {
@@ -79,7 +80,7 @@ exports.resetPassword = async (req, res) => {
     const newCode = new userVerifyModel({ID: user.email, secretCode: tokenService.sign(user.email)});
     savedCode = await newCode.save();
   }
-  const mailContent = `<p>Please use the following link within the next 15 minutes to reset password: <strong><a href="${req.get('Origin')}/reset-password/${savedCode.ID}/${savedCode.secretCode}" target="_blank">Link</a></strong></p>`;
+  const mailContent = `<p>Please use the following link within the next 15 minutes to reset password: <strong><a href="${CLIENT_URL}/reset-password/${savedCode.ID}/${savedCode.secretCode}" target="_blank">Link</a></strong></p>`;
   await mailService.send(user.email, "Reset password request", mailContent);
   res.status(200).send("Success");
 }
