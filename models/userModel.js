@@ -11,13 +11,11 @@ const UserSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
-    unique: true,
   },
   password: {
     type: String,
-    //required: true,
+    required: true,
     select: false,
-    default: ""
   },
   email: {
     type: String,
@@ -86,4 +84,4 @@ UserSchema.pre('findOneAndUpdate', async function (next) {
 
 
 User = mongoose.model("user", UserSchema);
-module.exports = {User,ROLE, UserSchema};
+module.exports = {User, ROLE, UserSchema: UserSchema_nopw};
