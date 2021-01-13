@@ -112,11 +112,13 @@ router.post('/reset-password/request/', async (req, res, next) => {
   if (!user)
     return res.status(404).json({message: "Account not exist"});
 
-  const secretCode = tokenService.sign(user.email);
-  const verifyData = new userVerifyModel({ID: user.email, secretCode: secretCode});
-  await verifyData.save();
+  let savedCode = await userVerifyModel.findOne({ID: user.email});
+  if (!savedCode) {
+    const newCode = new userVerifyModel({ID: user.email, secretCode: tokenService.sign(user.email)});
+    savedCode = await newCode.save();
+  }
 
-  const mailContent = `<p>Please use the following link within the next 15 minutes to reset password: <strong><a href="${CLIENT_URL}/reset-password/${user.email}/${secretCode}" target="_blank">Link</a></strong></p>`;
+  const mailContent = `<p>Please use the following link within the next 15 minutes to reset password: <strong><a href="${CLIENT_URL}/reset-password/${savedCode.ID}/${savedCode.secretCode}" target="_blank">Link</a></strong></p>`;
   await mailService.send(user.email, "Reset password request", mailContent);
   res.status(200).json({message: "Success"});
 });

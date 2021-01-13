@@ -1,5 +1,5 @@
 require('dotenv').config();
-const {User} = require('../models/userModel');
+const {User, ROLE} = require('../models/userModel');
 const userVerifyModel = require('../models/userVerifyModel');
 const tokenService = require('../services/token-service');
 const mailService = require('../services/mail-service');
@@ -18,12 +18,13 @@ exports.register = async (req, res) => {
   let savedUser = await newUser.save();
   if (!savedUser)
     return res.status(500).send("Error occur when saving user.");
+  let savedCode = await userVerifyModel.findOne({ID: savedUser._id});
+  if (!savedCode) {
+    const newCode = new userVerifyModel({ID: savedUser._id, secretCode: tokenService.sign(savedUser._id)});
+    savedCode = await newCode.save();
+  }
 
-  const secretCode = tokenService.sign(savedUser._id);
-  const verifyData = new userVerifyModel({ID: savedUser._id, secretCode: secretCode});
-  await verifyData.save();
-
-  const mailContent = `<p>Please use the following link within the next 15 minutes to activate your account: <strong><a href="${SERVER_URL}/users/verification/verify-account/${savedUser._id}/${secretCode}" target="_blank">Link</a></strong></p>`;
+  const mailContent = `<p>Please use the following link within the next 15 minutes to activate your account: <strong><a href="${SERVER_URL}/users/verification/verify-account/${savedCode.ID}/${savedCode.secretCode}" target="_blank">Link</a></strong></p>`;
   await mailService.send(savedUser.email, "Verify your email", mailContent);
   res.redirect(CLIENT_URL + "/login", 201);
 }
@@ -45,8 +46,12 @@ exports.verify = async (req, res) => {
 
 exports.login = async (req, res) => {
   if (!req.user.isVerified)
-    return res.status(403).send("Account has not been verified");
+    return res.status(400).send("Account has not been verified");
+
   let user = req.user;
+  if (user.role === ROLE.BANNED)
+    return res.status(403).send("Account has been blocked");
+
   user.password = undefined;
   res.status(200).send({token: tokenService.sign(user), userInfo: user});
 }
@@ -67,12 +72,13 @@ exports.resetPassword = async (req, res) => {
   if (!user)
     return res.status(404).send("Account not exist");
 
-  console.log(user);
-  const secretCode = tokenService.sign(user.email);
-  const verifyData = new userVerifyModel({ID: user.email, secretCode: secretCode});
-  await verifyData.save();
+  let savedCode = await userVerifyModel.findOne({ID: user.email});
+  if (savedCode) {
+    const newCode = new userVerifyModel({ID: user.email, secretCode: tokenService.sign(user.email)});
+    savedCode = await newCode.save();
+  }
 
-  const mailContent = `<p>Please use the following link within the next 15 minutes to reset password: <strong><a href="${CLIENT_URL}/reset-password/${user.email}/${secretCode}" target="_blank">Link</a></strong></p>`;
+  const mailContent = `<p>Please use the following link within the next 15 minutes to reset password: <strong><a href="${CLIENT_URL}/reset-password/${savedCode.ID}/${savedCode.secretCode}" target="_blank">Link</a></strong></p>`;
   await mailService.send(user.email, "Reset password request", mailContent);
   res.status(200).send("Success");
 }
