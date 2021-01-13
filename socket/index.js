@@ -11,6 +11,7 @@ const {row} = require('../constants/constants.js');
 const {User} = require('../models/userModel');
 
 const USER_ROOM_PREFIX = 'user';
+const RATING_OFFSET = 500;
 
 module.exports = (app) => {
 
@@ -142,6 +143,26 @@ module.exports = (app) => {
         io.emit(LOBBY_EVENT.LIST_LOBBY, lobbies);
       }
     });
+
+    socket.on(LOBBY_EVENT.FIND_LOBBY, () => {
+      const user1 = socket.user;
+      const result = findCompetitor(lobbies, user1);
+      if (!result) {
+        const lobbyId = uuidV4();
+        const newLobby = new Lobby(lobbyId, user1);
+        const roomId = newLobby.getRoomName();
+        lobbies[roomId] = newLobby;
+        chats[roomId] = [];
+        socket.join(roomId);
+        socket.gameRoom = {lobbyId: lobbyId, player: PLAYER_1};
+        socket.emit(LOBBY_EVENT.CREATE_LOBBY, {roomId: roomId, player: PLAYER_1});
+        io.emit(LOBBY_EVENT.LIST_LOBBY, lobbies);
+      } else {
+        const roomID = result.lobby.getRoomName();
+        const competitor = result.competitor;
+        socket.emit(LOBBY_EVENT.LOBBY_FOUND, {competitor: competitor, roomId: roomID});
+      }
+    })
 
     /*
     CHAT SOCKET
@@ -278,4 +299,22 @@ const find = (userList, user) => {
     }
   }
   return false;
+}
+
+const findCompetitor = (lobbies, user) => {
+  const roomIDs = Object.keys(lobbies);
+  for (let roomID of roomIDs) {
+    const lobby = lobbies[roomIDs];
+    console.log(lobby);
+    const {player1, player2} = lobby.getPlayers();
+    {
+      if (!player1 || !player2) {
+        const competitor = player1 || player2;
+        if (Math.abs(competitor.rating - user.rating) <= RATING_OFFSET) {
+          return {lobby, competitor};
+        }
+      }
+    }
+  }
+  return null;
 }

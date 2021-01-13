@@ -11,7 +11,9 @@ const LOBBY_EVENT = {
   DELETE_LOBBY: 'lobby/delete',
   LEAVE_LOBBY: 'lobby/leave',
   LOBBY_INFO: 'lobby/info',
-  INVITE: 'lobby/invite'
+  INVITE: 'lobby/invite',
+  FIND_LOBBY: 'lobby/find',
+  LOBBY_FOUND: 'lobby/found',
 };
 
 const GAME_EVENT = {

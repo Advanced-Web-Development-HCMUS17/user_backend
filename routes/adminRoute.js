@@ -7,8 +7,6 @@ const Game = require('../models/gameModel');
 const tokenService = require('../services/token-service');
 const mailService = require('../services/mail-service');
 
-const CLIENT_URL = process.env.CLIENT_URL;
-
 router.get('/user', passport.authenticate('adminJwt', {session: false}),
   async (req, res, next) => {
     const pageIndex = req.query.pageIndex ? Number(req.query.pageIndex) : 1;
@@ -117,8 +115,7 @@ router.post('/reset-password/request/', async (req, res, next) => {
     const newCode = new userVerifyModel({ID: user.email, secretCode: tokenService.sign(user.email)});
     savedCode = await newCode.save();
   }
-
-  const mailContent = `<p>Please use the following link within the next 15 minutes to reset password: <strong><a href="${CLIENT_URL}/reset-password/${savedCode.ID}/${savedCode.secretCode}" target="_blank">Link</a></strong></p>`;
+  const mailContent = `<p>Please use the following link within the next 15 minutes to reset password: <strong><a href="${req.get('Origin')}/reset-password/${savedCode.ID}/${savedCode.secretCode}" target="_blank">Link</a></strong></p>`;
   await mailService.send(user.email, "Reset password request", mailContent);
   res.status(200).json({message: "Success"});
 });

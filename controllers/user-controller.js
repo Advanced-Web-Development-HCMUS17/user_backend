@@ -7,7 +7,6 @@ const mailService = require('../services/mail-service');
 const FormData = require('form-data');
 const axios = require("axios");
 
-const CLIENT_URL = process.env.CLIENT_URL;
 const SERVER_URL = process.env.SERVER_URL;
 
 exports.register = async (req, res) => {
@@ -29,7 +28,7 @@ exports.register = async (req, res) => {
 
   const mailContent = `<p>Please use the following link within the next 15 minutes to activate your account: <strong><a href="${SERVER_URL}/users/verification/verify-account/${savedCode.ID}/${savedCode.secretCode}" target="_blank">Link</a></strong></p>`;
   await mailService.send(savedUser.email, "Verify your email", mailContent);
-  res.redirect(201, CLIENT_URL + "/login");
+  res.redirect(201,"/login");
 }
 
 exports.verify = async (req, res) => {
@@ -44,7 +43,7 @@ exports.verify = async (req, res) => {
 
   await User.findByIdAndUpdate(userId, {"isVerified": true});
   await userVerifyModel.findOneAndDelete({ID: userId, secretCode: secretCode});
-  res.redirect(CLIENT_URL + "/login");
+  res.redirect("/login");
 }
 
 exports.login = async (req, res) => {
@@ -61,9 +60,9 @@ exports.login = async (req, res) => {
 
 exports.loginUsingOAuth2 = async (req, res) => {
   if (!req.user)
-    return res.redirect(CLIENT_URL + '/login');
+    return res.redirect('/login');
   req.user.password = undefined;
-  res.redirect(`${CLIENT_URL}/login/${tokenService.sign(req.user)}`);
+  res.redirect(`${req.get('Origin')}/login/${tokenService.sign(req.user)}`);
 }
 
 exports.resetPassword = async (req, res) => {
@@ -76,12 +75,11 @@ exports.resetPassword = async (req, res) => {
     return res.status(404).send("Account not exist");
 
   let savedCode = await userVerifyModel.findOne({ID: user.email});
-  if (savedCode) {
+  if (!savedCode) {
     const newCode = new userVerifyModel({ID: user.email, secretCode: tokenService.sign(user.email)});
     savedCode = await newCode.save();
   }
-
-  const mailContent = `<p>Please use the following link within the next 15 minutes to reset password: <strong><a href="${CLIENT_URL}/reset-password/${savedCode.ID}/${savedCode.secretCode}" target="_blank">Link</a></strong></p>`;
+  const mailContent = `<p>Please use the following link within the next 15 minutes to reset password: <strong><a href="${req.get('Origin')}/reset-password/${savedCode.ID}/${savedCode.secretCode}" target="_blank">Link</a></strong></p>`;
   await mailService.send(user.email, "Reset password request", mailContent);
   res.status(200).send("Success");
 }
@@ -104,7 +102,7 @@ exports.updatePassword = async (req, res) => {
 exports.getMatchHistory = async (req, res) => {
   try {
     const user = req.user;
-    const games = await Game.find().or([{user1: user.username}, {user2: user.username}]).exec();
+    const games = await Game.find().or([{"user1.email": user.email}, {"user2.email": user.email}]).exec();
     return res.status(200).json({user: user, games: games});
   } catch (e) {
     console.log(e);
