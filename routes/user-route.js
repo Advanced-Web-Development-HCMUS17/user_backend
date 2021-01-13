@@ -27,7 +27,7 @@ router.get('/game', passport.authenticate('jwt', {session: false}),
     const pageSize = req.query.pageSize ? Number(req.query.pageSize) : 10;
     const skip = pageSize * (pageIndex - 1);
     const userId = req.user._id;
-    const games = await Game.find({$or: [{user1: userId}, {user2: userId}]}).limit(pageSize).skip(skip).lean();
+    const games = await Game.find({$or: [{"user1._id": userId}, {"user2._id": userId}]}).limit(pageSize).skip(skip).lean();
     res.json(games);
   });
 
