@@ -29,7 +29,7 @@ exports.register = async (req, res) => {
 
   const mailContent = `<p>Please use the following link within the next 15 minutes to activate your account: <strong><a href="${SERVER_URL}/users/verification/verify-account/${savedCode.ID}/${savedCode.secretCode}" target="_blank">Link</a></strong></p>`;
   await mailService.send(savedUser.email, "Verify your email", mailContent);
-  res.redirect(201,"/login");
+  res.redirect(201, "/login");
 }
 
 exports.verify = async (req, res) => {
@@ -44,7 +44,7 @@ exports.verify = async (req, res) => {
 
   await User.findByIdAndUpdate(userId, {"isVerified": true});
   await userVerifyModel.findOneAndDelete({ID: userId, secretCode: secretCode});
-  res.redirect("/login");
+  res.redirect(CLIENT_URL + "/login");
 }
 
 exports.login = async (req, res) => {
